@@ -1,6 +1,27 @@
 const socket = io();
-
 const sayriChatHistory = document.getElementById('sayri-chat-history');
+const bannerEl = document.querySelector('.notebook-banner');
+
+// Engagement "Traps" Messages
+const traps = [
+    "💬 Type 'HI' to see your name on the Notebook! 💬",
+    "✨ Comment 'SAYRI' for a personalized Shayari! ✨",
+    "❤️ Shayari Lovers, comment 'WOW' right now! ❤️",
+    "🔥 Apne naam ki shayari sunne ke liye ek comment karein! 🔥",
+    "🌹 Send a message and join our Live History! 🌹"
+];
+
+let currentTrapIndex = 0;
+setInterval(() => {
+    currentTrapIndex = (currentTrapIndex + 1) % traps.length;
+    if (bannerEl) {
+        bannerEl.style.opacity = 0;
+        setTimeout(() => {
+            bannerEl.innerText = traps[currentTrapIndex];
+            bannerEl.style.opacity = 1;
+        }, 500);
+    }
+}, 25000); // Change every 25 seconds
 
 // Queue to store incoming comments/sayris
 const commentQueue = [];
@@ -78,7 +99,9 @@ function processQueue() {
 }
 
 function speak(name, sayri) {
-    const textToSpeak = `${name} ke liye... ${sayri}`;
+    // Remove '@' from name for clean Text-to-Speech
+    const cleanName = name.replace(/@/g, '').trim();
+    const textToSpeak = `${cleanName} ke liye... ${sayri}`;
     const url = `/tts?text=${encodeURIComponent(textToSpeak)}`;
     const audio = new Audio(url);
     audio.volume = 1.0;
@@ -140,4 +163,10 @@ function launchEmojiAnimation() {
             setTimeout(() => { emojiEl.remove(); }, duration * 1000);
         }, i * 150);
     }
+}
+
+// Ensure first trap is set correctly
+if (bannerEl) {
+    bannerEl.style.transition = "opacity 0.5s ease";
+    bannerEl.innerText = traps[0];
 }
