@@ -1,5 +1,5 @@
 body {
-    background-color: transparent; /* For OBS overlay */
+    background-color: transparent;
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -25,19 +25,18 @@ body {
     flex-direction: column;
 }
 
-/* Style for the notice banner at the top of notebook */
 .notebook-banner {
     background: #ff4757;
     color: white;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: bold;
     text-align: center;
-    padding: 8px;
+    padding: 10px;
     border-radius: 4px;
     margin-bottom: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
     font-family: Arial, sans-serif;
-    z-index: 10;
+    transition: opacity 0.5s ease;
 }
 
 .notebook::before {
@@ -48,7 +47,6 @@ body {
     bottom: 0;
     width: 2px;
     background: #ffadad;
-    z-index: 5;
 }
 
 .page {
@@ -56,34 +54,39 @@ body {
     margin-left: 50px;
     overflow: hidden;
     position: relative;
-    padding-bottom: 10px;
 }
 
-/* Chat History Container */
 .sayri-chat-history {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     height: 100%;
-    gap: 12px;
+    gap: 15px;
+    padding-bottom: 10px;
 }
 
-/* Individual Sayri Card */
+/* --- ADVANCED SAYRI CARD --- */
 .sayri-card {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    background: rgba(255, 255, 255, 0.7);
-    padding: 10px;
-    border-radius: 8px;
-    border-left: 4px solid #ff4757;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-    animation: cardSlide 0.5s ease-out forwards;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 12px;
+    border-radius: 12px;
+    border-left: 5px solid #ff4757;
+    box-shadow: 4px 4px 15px rgba(0,0,0,0.1);
+    animation: cardSlide 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     max-width: 95%;
 }
 
+.vip-card {
+    border: 2px solid #f1c40f;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+}
+
 @keyframes cardSlide {
-    0% { opacity: 0; transform: translateX(30px); }
+    0% { opacity: 0; transform: translateX(50px); }
     100% { opacity: 1; transform: translateX(0); }
 }
 
@@ -92,52 +95,104 @@ body {
 }
 
 @keyframes cardExit {
-    0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(0.9); height: 0; margin: 0; padding: 0; }
+    100% { opacity: 0; transform: scale(0.85); height: 0; margin: 0; padding: 0; }
 }
 
-.card-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid #333;
-    object-fit: cover;
+/* --- AVATAR ANIMATIONS --- */
+.avatar-wrapper {
+    position: relative;
     flex-shrink: 0;
 }
 
-.card-body {
-    display: flex;
-    flex-direction: column;
+.card-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    object-fit: cover;
+    display: block;
+    animation: avatarEntry 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes avatarEntry {
+    0% { transform: scale(0) rotate(-180deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* VIP Rotating Border */
+.vip-card .card-avatar {
+    border: 2px solid #f1c40f;
+    animation: avatarEntry 0.8s forwards, vipGlow 2s infinite linear;
+}
+
+@keyframes vipGlow {
+    0% { box-shadow: 0 0 5px #f1c40f; }
+    50% { box-shadow: 0 0 15px #f39c12; }
+    100% { box-shadow: 0 0 5px #f1c40f; }
+}
+
+/* Speaking Pulse Effect */
+.speaking .card-avatar {
+    animation: speakingPulse 1s infinite;
+}
+
+@keyframes speakingPulse {
+    0% { box-shadow: 0 0 0 0px rgba(255, 71, 87, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+    100% { box-shadow: 0 0 0 0px rgba(255, 71, 87, 0); }
+}
+
+.winner-card {
+    border: 3px solid #f39c12;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+    transform: scale(1.05);
+}
+
+.paheli-active {
+    animation: pulsePaheli 1s infinite;
+}
+
+@keyframes pulsePaheli {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); background: #e67e22; }
+    100% { transform: scale(1); }
 }
 
 .card-author {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
-    color: #ff4757;
-    margin: 0 0 2px 0;
+    color: #333;
+    margin: 0 0 4px 0;
     font-family: Arial, sans-serif;
 }
 
+.vip-badge {
+    background: #f1c40f;
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-left: 5px;
+}
+
 .card-text {
-    font-size: 18px;
+    font-size: 20px;
     color: #2c3e50;
     margin: 0;
-    line-height: 22px;
+    line-height: 26px;
     font-weight: 500;
 }
 
-/* --- RE-DESIGNED HISTORY BOX --- */
+/* History Box */
 .history-box {
-    margin-top: 25px;
-    width: 600px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
+    margin-top: 20px;
+    width: 620px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
     padding: 12px 20px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .history-box h3 {
@@ -145,20 +200,13 @@ body {
     font-size: 13px;
     color: #fff;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-family: Arial, sans-serif;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 .avatar-list {
     display: flex;
-    flex-wrap: nowrap;
     overflow-x: auto;
     gap: 12px;
-    padding: 5px 0;
     scrollbar-width: none;
 }
 
@@ -169,24 +217,22 @@ body {
     height: 40px;
     border-radius: 50%;
     border: 2px solid #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     flex-shrink: 0;
-    animation: avatarPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes avatarPop {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* Flying Emojis Layer */
-.emoji-layer {
-    position: absolute;
-    width: 100%; height: 100%;
-    top: 0; left: 0;
+/* Takeover Animations */
+.takeover-emoji {
+    position: fixed;
+    bottom: -100px;
+    z-index: 10000;
     pointer-events: none;
-    overflow: hidden;
-    z-index: 999;
+    animation: takeoverFly 3s linear forwards;
+}
+
+@keyframes takeoverFly {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
 }
 
 .floating-emoji {
@@ -198,7 +244,7 @@ body {
 }
 
 @keyframes floatUp {
-    0% { transform: translateY(0) scale(0.5); opacity: 0; }
-    10% { opacity: 1; transform: translateY(-50px) scale(1.2); }
-    100% { transform: translateY(-105vh) scale(1); opacity: 0; }
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(-100vh); opacity: 0; }
 }
