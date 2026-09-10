@@ -6,6 +6,7 @@ const bannerEl = document.querySelector('.notebook-banner');
 const traps = [
     "💬 Type 'HI' to see your name on the Notebook! 💬",
     "✨ Comment 'SAYRI' for a personalized Shayari! ✨",
+    "😂 Type 'JOKE' for a funny Hindi Joke! 😂",
     "❤️ Shayari Lovers, comment 'WOW' right now! ❤️",
     "🔥 Apne naam ki shayari sunne ke liye ek comment karein! 🔥",
     "🌹 Send a message and join our Live History! 🌹"
