@@ -43,11 +43,9 @@ if (LIVE_ID) {
     const jokes = JSON.parse(fs.readFileSync(path.join(__dirname, 'jokes.json'), 'utf8'));
     const paheliyan = JSON.parse(fs.readFileSync(path.join(__dirname, 'paheli.json'), 'utf8'));
 
-    // Interval to send Paheli every 3 minutes
     setInterval(() => {
         currentPaheli = paheliyan[Math.floor(Math.random() * paheliyan.length)];
         io.emit('new-paheli', currentPaheli.question);
-        console.log(`[PAHELI] ${currentPaheli.question}`);
     }, 180000);
 
     liveChat.on('chat', (chatItem) => {
@@ -60,25 +58,36 @@ if (LIVE_ID) {
         let isVip = false;
         let soundEffect = null;
 
-        // 1. Paheli Answer Check
-        if (currentPaheli && upperMsg.includes(currentPaheli.answer.toUpperCase())) {
-            resultText = `WOW! ${author} ne sahi jawab diya! Answer tha: ${currentPaheli.answer}. Aap bante hain Winner!`;
-            takeover = 'WINNER';
-            currentPaheli = null; // Reset paheli
+        // --- SAFE AVATAR EXTRACTION (FIXED CRASH) ---
+        let thumbnail = 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+        try {
+            if (chatItem.author.thumbnail) {
+                if (typeof chatItem.author.thumbnail === 'string') {
+                    thumbnail = chatItem.author.thumbnail;
+                } else if (Array.isArray(chatItem.author.thumbnail) && chatItem.author.thumbnail.length > 0) {
+                    thumbnail = chatItem.author.thumbnail[0].url || chatItem.author.thumbnail[chatItem.author.thumbnail.length - 1].url;
+                } else if (chatItem.author.thumbnail.url) {
+                    thumbnail = chatItem.author.thumbnail.url;
+                }
+            }
+        } catch (e) {
+            console.log('Thumbnail extraction error, using default.');
         }
-        // 2. Sound Triggers
+
+        if (currentPaheli && upperMsg.includes(currentPaheli.answer.toUpperCase())) {
+            resultText = `WOW! ${author} ne sahi jawab diya! Winner cups aapke liye!`;
+            takeover = 'WINNER';
+            currentPaheli = null;
+        }
         else if (upperMsg.includes('HAHA')) soundEffect = 'laugh';
         else if (upperMsg.includes('CLAP')) soundEffect = 'clap';
         else if (upperMsg.includes('OOPS')) soundEffect = 'oops';
-
-        // 3. Hajiri
         else if (upperMsg.includes('PRESENT') && hajiriCount < 10 && !hajiriList.has(author)) {
             hajiriCount++;
             hajiriList.add(author);
             isVip = true;
             resultText = `VIP Shoutout to ${author}! Early bird badge unlocked!`;
         }
-        // 4. Mood Control
         else if (upperMsg.includes('LOVE')) resultText = sayris.LOVE[Math.floor(Math.random() * sayris.LOVE.length)];
         else if (upperMsg.includes('SAD')) resultText = sayris.SAD[Math.floor(Math.random() * sayris.SAD.length)];
         else if (upperMsg.includes('DOSTI')) resultText = sayris.DOSTI[Math.floor(Math.random() * sayris.DOSTI.length)];
@@ -96,7 +105,7 @@ if (LIVE_ID) {
 
         io.emit('new-comment', {
             name: author,
-            avatar: chatItem.author.thumbnail ? (typeof chatItem.author.thumbnail === 'string' ? chatItem.author.thumbnail : chatItem.author.thumbnail[0].url) : '',
+            avatar: thumbnail,
             sayri: resultText,
             isVip: isVip || hajiriList.has(author),
             takeover: takeover,
