@@ -1,8 +1,6 @@
 const socket = io();
 
-const authorName = document.getElementById('author-name');
-const sayriText = document.getElementById('sayri-text');
-const container = document.getElementById('comment-container');
+const sayriChatHistory = document.getElementById('sayri-chat-history');
 
 // Queue to store incoming comments/sayris
 const commentQueue = [];
@@ -11,14 +9,11 @@ let audioUnlocked = false;
 
 // Function to unlock audio context in Chrome/OBS
 function unlockAudio() {
-    // Play a tiny silent sound to unlock Web Audio context
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (AudioContext) {
             const ctx = new AudioContext();
-            if (ctx.state === 'suspended') {
-                ctx.resume();
-            }
+            if (ctx.state === 'suspended') ctx.resume();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             gain.gain.value = 0.001;
@@ -46,40 +41,44 @@ function processQueue() {
     isSpeaking = true;
     const currentData = commentQueue.shift();
 
-    // UI Updates
-    const infoContainer = document.querySelector('.author-info');
-    infoContainer.classList.remove('author-pop');
-    sayriText.classList.remove('writing-effect');
+    // 1. Create New Chat Card
+    const card = document.createElement('div');
+    card.className = 'sayri-card';
 
-    void infoContainer.offsetWidth;
-    void sayriText.offsetWidth;
+    let avatarUrl = currentData.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
 
-    const avatarImg = document.getElementById('author-avatar');
-    if (currentData.avatar && currentData.avatar.trim() !== '') {
-        let avatarUrl = currentData.avatar;
-        if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
-        avatarImg.src = avatarUrl;
-    } else {
-        avatarImg.src = 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    card.innerHTML = `
+        <img src="${avatarUrl}" class="card-avatar">
+        <div class="card-body">
+            <h4 class="card-author">${currentData.name}</h4>
+            <p class="card-text">${currentData.sayri}</p>
+        </div>
+    `;
+
+    // 2. Add to History and manage FIFO (max 5-6 items)
+    sayriChatHistory.appendChild(card);
+
+    if (sayriChatHistory.children.length > 5) {
+        const oldest = sayriChatHistory.children[0];
+        oldest.classList.add('exit');
+        setTimeout(() => {
+            if (oldest.parentNode === sayriChatHistory) {
+                sayriChatHistory.removeChild(oldest);
+            }
+        }, 500);
     }
 
-    authorName.innerText = currentData.name;
-    sayriText.innerText = currentData.sayri;
-
-    addAvatarToHistory(currentData.name, avatarImg.src);
+    // 3. Update Global History & Emojis
+    addAvatarToHistory(currentData.name, avatarUrl);
     launchEmojiAnimation();
 
-    infoContainer.classList.add('author-pop');
-    sayriText.classList.add('writing-effect');
-
-    // Text to Speech
+    // 4. Text to Speech
     speak(currentData.name, currentData.sayri);
 }
 
 function speak(name, sayri) {
     const textToSpeak = `${name} ke liye... ${sayri}`;
-
-    // Use the Proxy TTS route instead of Web Speech API for OBS reliability
     const url = `/tts?text=${encodeURIComponent(textToSpeak)}`;
     const audio = new Audio(url);
     audio.volume = 1.0;
@@ -88,7 +87,7 @@ function speak(name, sayri) {
         isSpeaking = false;
         setTimeout(() => {
             processQueue();
-        }, 1000);
+        }, 800);
     };
 
     audio.onerror = (err) => {
@@ -98,12 +97,10 @@ function speak(name, sayri) {
     };
 
     audio.play().catch(err => {
-        console.warn('Autoplay blocked. User needs to click first.', err);
-        // Show overlay if blocked
+        console.warn('Autoplay blocked.', err);
         const overlay = document.getElementById('audio-unlock-overlay');
         if (overlay) overlay.style.display = 'flex';
         isSpeaking = false;
-        // Don't process queue, wait for user to click
     });
 }
 
@@ -111,13 +108,17 @@ const uniqueCommenters = new Set();
 function addAvatarToHistory(name, avatarUrl) {
     if (uniqueCommenters.has(name)) return;
     uniqueCommenters.add(name);
+
+    const countEl = document.getElementById('viewer-count');
+    if (countEl) countEl.innerText = uniqueCommenters.size;
+
     const historyList = document.getElementById('avatar-history-list');
     const img = document.createElement('img');
     img.src = avatarUrl;
     img.className = 'history-avatar-item';
     img.title = name;
     historyList.appendChild(img);
-    historyList.scrollTop = historyList.scrollHeight;
+    historyList.scrollLeft = historyList.scrollWidth;
 }
 
 const emojiPool = ['❤️', '💖', '✨', '🌹', '👏', '😍', '🔥', '😇', '🎈', '🎉'];

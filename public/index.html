@@ -7,27 +7,32 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body onclick="unlockAudio()">
+    <!-- Audio status helper for OBS -->
+    <div id="audio-unlock-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000; color: white; cursor: pointer;">
+        <div style="text-align: center; background: #333; padding: 30px; border-radius: 10px; border: 2px solid #ff4757;">
+            <h2 style="margin: 0 0 10px 0;">🔊 Click to Enable OBS Sound</h2>
+            <p>OBS blocks sound by default. Click here to start TTS.</p>
+        </div>
+    </div>
+
     <!-- Container for flying emojis -->
     <div id="emoji-container" class="emoji-layer"></div>
 
     <div class="notebook">
         <!-- Live Banner at the top of the notebook -->
-        <div class="notebook-banner">💬 Comment Karein Apne Naam Ki Sayri Sunne Ke Liye! 💬</div>
+        <div class="notebook-banner">💬 Live Sayri Chat - Apne Naam Ki Sayri Sunne Ke Liye Comment Karein! 💬</div>
 
         <div class="page">
-            <div class="content" id="comment-container">
-                <div class="author-info">
-                    <img id="author-avatar" src="https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png" alt="Avatar">
-                    <h2 id="author-name">Waiting for comments...</h2>
-                </div>
-                <p id="sayri-text">Sayri will appear here.</p>
+            <!-- Container for chat-style sayri history -->
+            <div id="sayri-chat-history" class="sayri-chat-history">
+                <!-- Sayris will be added here like a chat -->
             </div>
         </div>
     </div>
 
     <!-- History Box for Commenters' Avatars -->
     <div class="history-box">
-        <h3>Live Viewers History</h3>
+        <h3>Live Viewers History <span id="viewer-count" style="background: #ff4757; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 10px; box-shadow: 0 0 5px rgba(255,71,87,0.5);">0</span></h3>
         <div id="avatar-history-list" class="avatar-list"></div>
     </div>
 
