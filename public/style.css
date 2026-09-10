@@ -1,0 +1,219 @@
+body {
+    background-color: transparent; /* For OBS overlay */
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.notebook {
+    width: 600px;
+    height: 420px;
+    background: #fffef0;
+    border: 2px solid #dcdcdc;
+    box-shadow: 10px 10px 20px rgba(0,0,0,0.3);
+    position: relative;
+    padding: 20px;
+    border-radius: 5px;
+    background-image: linear-gradient(#e1e1e1 1px, transparent 1px);
+    background-size: 100% 30px;
+}
+
+/* Style for the notice banner at the top of notebook */
+.notebook-banner {
+    background: #ff4757;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    padding: 6px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    font-family: Arial, sans-serif;
+    letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.notebook::before {
+    content: '';
+    position: absolute;
+    left: 40px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ffadad;
+}
+
+.content {
+    margin-left: 50px;
+    margin-top: 15px;
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+}
+
+#author-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    object-fit: cover;
+    display: block !important; /* Ensure it is never hidden by browser styles */
+    background-color: #ccc; /* Pre-fill background while image loads */
+}
+
+#author-name {
+    color: #333;
+    font-size: 24px;
+    margin: 0;
+    display: inline-block;
+}
+
+#sayri-text {
+    color: #2c3e50;
+    font-size: 22px;
+    line-height: 32px;
+    white-space: pre-wrap;
+    font-weight: 500;
+}
+
+/* Typing / Writing effect effect for Sayri Text */
+.writing-effect {
+    display: inline-block;
+    overflow: hidden;
+    animation: typeIn 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.1));
+}
+
+@keyframes typeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.98);
+        filter: blur(4px);
+        color: #ff4757; /* Starts slightly reddish like writing freshly */
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+        color: #2c3e50; /* Settles down to dark ink color */
+    }
+}
+
+/* Author/Avatar Info Pop-in effect */
+.author-pop {
+    animation: authorBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes authorBounce {
+    0% { transform: scale(0.6); opacity: 0; }
+    70% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Animation for new comments container */
+.fade-in {
+    /* Kept for outer wrapper transitions if needed */
+}
+
+/* History Box Styling */
+.history-box {
+    position: absolute;
+    bottom: 20px;
+    width: 600px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #dcdcdc;
+    border-radius: 8px;
+    padding: 10px 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-sizing: border-box;
+}
+
+.history-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 4px;
+}
+
+.avatar-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 70px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.history-avatar-item {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 1.5px solid #555;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    object-fit: cover;
+    animation: popIn 0.4s ease-out;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Flying Emojis Layer */
+.emoji-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none; /* Allows clicks to pass through */
+    overflow: hidden;
+    z-index: 999;
+}
+
+.floating-emoji {
+    position: absolute;
+    bottom: -50px;
+    font-size: 30px;
+    user-select: none;
+    animation: floatUp 3s linear forwards;
+    opacity: 0;
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) translateX(0) scale(0.5);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+        transform: translateY(-50px) translateX(10px) scale(1.2);
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-105vh) translateX(-30px) scale(1);
+        opacity: 0;
+    }
+}

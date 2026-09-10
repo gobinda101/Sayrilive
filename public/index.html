@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayri Live Notebook</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body onclick="unlockAudio()">
+    <!-- Container for flying emojis -->
+    <div id="emoji-container" class="emoji-layer"></div>
+
+    <div class="notebook">
+        <!-- Live Banner at the top of the notebook -->
+        <div class="notebook-banner">💬 Comment Karein Apne Naam Ki Sayri Sunne Ke Liye! 💬</div>
+
+        <div class="page">
+            <div class="content" id="comment-container">
+                <div class="author-info">
+                    <img id="author-avatar" src="https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png" alt="Avatar">
+                    <h2 id="author-name">Waiting for comments...</h2>
+                </div>
+                <p id="sayri-text">Sayri will appear here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Box for Commenters' Avatars -->
+    <div class="history-box">
+        <h3>Live Viewers History</h3>
+        <div id="avatar-history-list" class="avatar-list"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
