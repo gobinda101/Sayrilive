@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayri Live Notebook</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Container for flying emojis -->
+    <div id="emoji-container" class="emoji-layer"></div>
+
+    <div class="notebook">
+        <!-- Live Banner at the top of the notebook -->
+        <div class="notebook-banner">💬 Live Sayri Chat - Apne Naam Ki Sayri Sunne Ke Liye Comment Karein! 💬</div>
+
+        <div class="page">
+            <!-- Container for chat-style sayri history -->
+            <div id="sayri-chat-history" class="sayri-chat-history">
+                <!-- Sayris will be added here like a chat -->
+            </div>
+        </div>
+    </div>
+
+    <!-- History Box for Commenters' Avatars -->
+    <div class="history-box">
+        <div class="hype-goal-container">
+            <div class="hype-text">HYPE GOAL: <span id="current-hype">0</span>/20 Viewers</div>
+            <div class="hype-bar-bg">
+                <div id="hype-bar-fill" class="hype-bar-fill"></div>
+            </div>
+        </div>
+        <h3>Live Viewers History <span id="viewer-count" style="background: #ff4757; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 10px; box-shadow: 0 0 5px rgba(255,71,87,0.5);">0</span></h3>
+        <div id="avatar-history-list" class="avatar-list"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
