@@ -11,8 +11,6 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = 3000;
-const LOG_FILE = path.join(__dirname, 'viewers_log.txt');
-
 const LIVE_URL = process.argv[2];
 
 function extractLiveId(url) {
@@ -35,49 +33,77 @@ app.get('/tts', (req, res) => {
 
 let hajiriCount = 0;
 const hajiriList = new Set();
-let currentPaheli = null;
+const userCommentTracker = new Map();
 
 if (LIVE_ID) {
     const liveChat = new LiveChat({ liveId: LIVE_ID });
     const sayris = JSON.parse(fs.readFileSync(path.join(__dirname, 'sayris.json'), 'utf8'));
     const jokes = JSON.parse(fs.readFileSync(path.join(__dirname, 'jokes.json'), 'utf8'));
-    const paheliyan = JSON.parse(fs.readFileSync(path.join(__dirname, 'paheli.json'), 'utf8'));
-
-    setInterval(() => {
-        currentPaheli = paheliyan[Math.floor(Math.random() * paheliyan.length)];
-        io.emit('new-paheli', currentPaheli.question);
-    }, 180000);
 
     liveChat.on('chat', (chatItem) => {
         const messageText = chatItem.message ? chatItem.message.map(m => m.text).join('') : '';
         const author = chatItem.author.name;
         const upperMsg = messageText.toUpperCase();
 
-        let resultText = '';
-        let takeover = null;
-        let isVip = false;
-        let soundEffect = null;
+        console.log(`[CHAT] ${author}: ${messageText}`);
 
-        // --- SAFE AVATAR EXTRACTION (FIXED CRASH) ---
+        // --- SIMPLIFIED AVATAR EXTRACTION ---
         let thumbnail = 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
         try {
             if (chatItem.author.thumbnail) {
                 if (typeof chatItem.author.thumbnail === 'string') {
                     thumbnail = chatItem.author.thumbnail;
-                } else if (Array.isArray(chatItem.author.thumbnail) && chatItem.author.thumbnail.length > 0) {
-                    thumbnail = chatItem.author.thumbnail[0].url || chatItem.author.thumbnail[chatItem.author.thumbnail.length - 1].url;
                 } else if (chatItem.author.thumbnail.url) {
                     thumbnail = chatItem.author.thumbnail.url;
+                } else if (Array.isArray(chatItem.author.thumbnail) && chatItem.author.thumbnail.length > 0) {
+                    thumbnail = chatItem.author.thumbnail[chatItem.author.thumbnail.length - 1].url || chatItem.author.thumbnail[0].url;
                 }
             }
+            if (thumbnail.startsWith('//')) thumbnail = 'https:' + thumbnail;
         } catch (e) {
-            console.log('Thumbnail extraction error, using default.');
+            console.log('Photo error');
         }
 
-        if (currentPaheli && upperMsg.includes(currentPaheli.answer.toUpperCase())) {
-            resultText = `WOW! ${author} ne sahi jawab diya! Winner cups aapke liye!`;
-            takeover = 'WINNER';
-            currentPaheli = null;
+        console.log(`[PHOTO LINK] ${author}: ${thumbnail}`);
+
+        // --- DOUBLE, FREQUENT & BIG THANKS COMMENT CHECK ---
+        const nowTime = Date.now();
+        let userRecord = userCommentTracker.get(author);
+        let isDoubleComment = false;
+        let isFrequentComment = false;
+        let isBigThanks = false;
+
+        if (userRecord) {
+            userRecord.count++;
+            userRecord.totalCount = (userRecord.totalCount || userRecord.count) + 1;
+            userRecord.lastTime = nowTime;
+
+            if (userRecord.count === 2) {
+                isDoubleComment = true;
+            } else if (userRecord.count > 2 && !userRecord.askedSubscribe) {
+                isFrequentComment = true;
+                userRecord.askedSubscribe = true;
+            }
+
+            if (userRecord.totalCount >= 5 && !userRecord.thanked) {
+                isBigThanks = true;
+                userRecord.thanked = true;
+            }
+        } else {
+            userCommentTracker.set(author, { count: 1, totalCount: 1, lastTime: nowTime, askedSubscribe: false, thanked: false });
+        }
+
+        let resultText = '';
+        let takeover = null;
+        let isVip = false;
+        let soundEffect = null;
+
+        if (isBigThanks) {
+            resultText = `Suno na ${author} ji, aapne 5 se zyada comments karke hum par jo apna pyaar barasaya hai, uske liye aapka dil se bahut-bahut shukriya! Thank you so much! ❤️`;
+            io.emit('big-thanks', { name: author, avatar: thumbnail });
+        }
+        else if (isFrequentComment) {
+            resultText = `Suno na ${author} ji, aapka ye baar-baar aana aur itna pyaar dena bahut achha lag raha hai, please video ko like aur channel ko subscribe zaroor kar dena! ❤️`;
         }
         else if (upperMsg.includes('HAHA')) soundEffect = 'laugh';
         else if (upperMsg.includes('CLAP')) soundEffect = 'clap';
@@ -86,7 +112,7 @@ if (LIVE_ID) {
             hajiriCount++;
             hajiriList.add(author);
             isVip = true;
-            resultText = `VIP Shoutout to ${author}! Early bird badge unlocked!`;
+            resultText = `VIP Entry for ${author}! You are an Early Bird! 🌟`;
         }
         else if (upperMsg.includes('LOVE')) resultText = sayris.LOVE[Math.floor(Math.random() * sayris.LOVE.length)];
         else if (upperMsg.includes('SAD')) resultText = sayris.SAD[Math.floor(Math.random() * sayris.SAD.length)];
@@ -96,12 +122,41 @@ if (LIVE_ID) {
             takeover = 'LAUGH';
         }
         else {
-            const cat = ['LOVE', 'SAD', 'DOSTI', 'RANDOM'][Math.floor(Math.random() * 4)];
+            const cat = Math.random() < 0.8 ? 'LOVE' : ['SAD', 'DOSTI', 'RANDOM'][Math.floor(Math.random() * 3)];
             resultText = sayris[cat][Math.floor(Math.random() * sayris[cat].length)];
         }
 
         if (upperMsg.includes('DIL')) takeover = 'HEARTS';
         if (upperMsg.includes('FIRE')) takeover = 'FIREWORKS';
+
+        if (isDoubleComment) {
+            const shayari = sayris.RANDOM[Math.floor(Math.random() * sayris.RANDOM.length)];
+            const romanticQuote = sayris.LOVE[Math.floor(Math.random() * sayris.LOVE.length)];
+
+            // First emit Shayari
+            io.emit('new-comment', {
+                name: author,
+                avatar: thumbnail,
+                sayri: shayari,
+                isVip: isVip || hajiriList.has(author),
+                takeover: takeover,
+                soundEffect: soundEffect
+            });
+
+            // Then emit Romantic Quote sequentially
+            setTimeout(() => {
+                io.emit('new-comment', {
+                    name: author,
+                    avatar: thumbnail,
+                    sayri: romanticQuote,
+                    isVip: isVip || hajiriList.has(author),
+                    takeover: null,
+                    soundEffect: null
+                });
+            }, 600);
+
+            return;
+        }
 
         io.emit('new-comment', {
             name: author,

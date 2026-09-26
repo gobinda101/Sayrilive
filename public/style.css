@@ -105,12 +105,14 @@ body {
 }
 
 .card-avatar {
-    width: 50px;
-    height: 50px;
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px;
+    min-height: 50px;
     border-radius: 50%;
     border: 2px solid #333;
     object-fit: cover;
-    display: block;
+    display: block !important;
     animation: avatarEntry 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
@@ -147,6 +149,16 @@ body {
     background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
     box-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
     transform: scale(1.05);
+}
+
+/* System Card Look (Auto Picks) */
+.system-card {
+    border-left: 5px solid #3498db;
+    background: rgba(240, 248, 255, 0.9);
+}
+
+.system-card .card-author {
+    color: #2980b9;
 }
 
 .paheli-active {
@@ -193,6 +205,39 @@ body {
     border-radius: 15px;
     padding: 12px 20px;
     border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Hype Goal Bar */
+.hype-goal-container {
+    margin-bottom: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hype-text {
+    color: #f1c40f;
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hype-bar-bg {
+    height: 10px;
+    background: #444;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.hype-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f1c40f, #e67e22);
+    box-shadow: 0 0 10px #f1c40f;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .history-box h3 {
@@ -247,4 +292,124 @@ body {
     0% { transform: translateY(0); opacity: 0; }
     10% { opacity: 1; }
     100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* --- BIG THANKS OVERLAY --- */
+.big-thanks-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    animation: fadeInOverlay 0.5s ease forwards;
+}
+
+@keyframes fadeInOverlay {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.big-thanks-card {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+    border: 4px solid #f1c40f;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    width: 400px;
+    box-shadow: 0 0 40px rgba(241, 196, 15, 0.8);
+    animation: scaleUpCard 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes scaleUpCard {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.big-thanks-avatar {
+    width: 100px !important;
+    height: 100px !important;
+    border-radius: 50%;
+    border: 4px solid #ff4757;
+    object-fit: cover;
+    margin: 15px auto;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
+    animation: avatarBounce 1s infinite alternate;
+}
+
+@keyframes avatarBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-8px); }
+}
+
+.big-thanks-card h2 {
+    color: #ff4757;
+    margin: 0 0 10px 0;
+    font-size: 22px;
+}
+
+.big-thanks-card h3 {
+    color: #2c3e50;
+    margin: 5px 0 10px 0;
+    font-size: 20px;
+}
+
+.big-thanks-card p {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.big-thanks-overlay.fade-out {
+    animation: fadeOutOverlay 0.8s ease forwards;
+}
+
+@keyframes fadeOutOverlay {
+    100% { opacity: 0; transform: scale(1.1); }
+}
+
+/* --- PAHELI FULL SCREEN MODAL OVERLAY --- */
+.paheli-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99998;
+    animation: fadeInOverlay 0.5s ease forwards;
+}
+
+.paheli-modal-card {
+    background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+    border: 4px solid #fff;
+    border-radius: 24px;
+    padding: 40px;
+    text-align: center;
+    width: 500px;
+    max-width: 90%;
+    box-shadow: 0 0 50px rgba(243, 156, 18, 0.9);
+    animation: scaleUpCard 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.paheli-modal-card h2 {
+    color: #fff;
+    margin: 0 0 15px 0;
+    font-size: 26px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.paheli-modal-card p {
+    color: #fff;
+    font-size: 22px;
+    line-height: 1.4;
+    margin: 0;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.paheli-modal-overlay.fade-out {
+    animation: fadeOutOverlay 0.8s ease forwards;
 }
