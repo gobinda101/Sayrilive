@@ -214,9 +214,4 @@ function launchTakeoverAnimation(type) {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-    } catch(e) {}
-});
+
