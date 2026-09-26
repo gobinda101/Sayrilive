@@ -89,6 +89,33 @@ async function processIncomingData(data) {
     if (!isProcessing) processQueue();
 }
 
+let currentPlayingAudio = null;
+
+async function playAudioSecurely(audioObj, timeoutMs) {
+    if (currentPlayingAudio) {
+        try {
+            currentPlayingAudio.pause();
+            currentPlayingAudio.currentTime = 0;
+        } catch(e) {}
+    }
+    currentPlayingAudio = audioObj;
+
+    return new Promise(res => {
+        let finished = false;
+        const finish = () => {
+            if (!finished) {
+                finished = true;
+                if (currentPlayingAudio === audioObj) currentPlayingAudio = null;
+                res();
+            }
+        };
+        audioObj.onended = finish;
+        audioObj.onerror = finish;
+        setTimeout(finish, timeoutMs);
+        audioObj.play().catch(finish);
+    });
+}
+
 async function processQueue() {
     if (commentQueue.length === 0) { isProcessing = false; return; }
     isProcessing = true;
@@ -129,15 +156,7 @@ async function processQueue() {
     card.classList.add('speaking');
 
     if (data.soundEffect && sounds[data.soundEffect]) {
-        await new Promise(res => {
-            let sFinished = false;
-            const sFinish = () => { if (!sFinished) { sFinished = true; res(); } };
-            const soundAudio = new Audio(sounds[data.soundEffect]);
-            soundAudio.onended = sFinish;
-            soundAudio.onerror = sFinish;
-            setTimeout(sFinish, 4000);
-            soundAudio.play().catch(sFinish);
-        });
+        await playAudioSecurely(new Audio(sounds[data.soundEffect]), 4000);
     }
 
     const cleanName = data.name.replace(/@/g, '').trim();
@@ -146,14 +165,7 @@ async function processQueue() {
     const ttsText = rawText.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '').trim();
     const url = `/tts?text=${encodeURIComponent(ttsText)}`;
     const audio = new Audio(url);
-    await new Promise(res => {
-        let finished = false;
-        const finish = () => { if (!finished) { finished = true; res(); } };
-        audio.onended = finish;
-        audio.onerror = finish;
-        setTimeout(finish, 15000);
-        audio.play().catch(finish);
-    });
+    await playAudioSecurely(audio, 15000);
     card.classList.remove('speaking');
 
     setTimeout(processQueue, 800);
