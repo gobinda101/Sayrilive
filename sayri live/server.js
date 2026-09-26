@@ -94,28 +94,29 @@ if (LIVE_ID) {
         // --- DOUBLE, FREQUENT & BIG THANKS COMMENT CHECK ---
         const nowTime = Date.now();
         let userRecord = userCommentTracker.get(author);
+        if (!userRecord) {
+            userRecord = { count: 0, totalCount: 0, lastTime: nowTime, askedSubscribe: false, thanked: false, givenVip: false };
+            userCommentTracker.set(author, userRecord);
+        }
+
+        userRecord.count++;
+        userRecord.totalCount = (userRecord.totalCount || 0) + 1;
+        userRecord.lastTime = nowTime;
+
         let isDoubleComment = false;
         let isFrequentComment = false;
         let isBigThanks = false;
 
-        if (userRecord) {
-            userRecord.count++;
-            userRecord.totalCount = (userRecord.totalCount || userRecord.count) + 1;
-            userRecord.lastTime = nowTime;
+        if (userRecord.count === 2) {
+            isDoubleComment = true;
+        } else if (userRecord.count > 2 && !userRecord.askedSubscribe) {
+            isFrequentComment = true;
+            userRecord.askedSubscribe = true;
+        }
 
-            if (userRecord.count === 2) {
-                isDoubleComment = true;
-            } else if (userRecord.count > 2 && !userRecord.askedSubscribe) {
-                isFrequentComment = true;
-                userRecord.askedSubscribe = true;
-            }
-
-            if (userRecord.totalCount >= 5 && !userRecord.thanked) {
-                isBigThanks = true;
-                userRecord.thanked = true;
-            }
-        } else {
-            userCommentTracker.set(author, { count: 1, totalCount: 1, lastTime: nowTime, askedSubscribe: false, thanked: false, givenVip: false });
+        if (userRecord.totalCount >= 5 && !userRecord.thanked) {
+            isBigThanks = true;
+            userRecord.thanked = true;
         }
 
         let resultText = '';
@@ -123,6 +124,7 @@ if (LIVE_ID) {
         let isVip = false;
         let soundEffect = null;
         let isNewVip = false;
+
         if (userRecord.totalCount >= 8 && !userRecord.givenVip) {
             userRecord.givenVip = true;
             isNewVip = true;
