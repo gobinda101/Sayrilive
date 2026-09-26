@@ -1,0 +1,435 @@
+body {
+    background-color: transparent;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+}
+
+.notebook {
+    width: 620px;
+    height: 550px;
+    background: #fffef0;
+    border: 2px solid #dcdcdc;
+    box-shadow: 10px 10px 25px rgba(0,0,0,0.3);
+    position: relative;
+    padding: 20px;
+    border-radius: 8px;
+    background-image: linear-gradient(#e1e1e1 1px, transparent 1px);
+    background-size: 100% 35px;
+    display: flex;
+    flex-direction: column;
+}
+
+.notebook-banner {
+    background: #ff4757;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+    font-family: Arial, sans-serif;
+    transition: opacity 0.5s ease;
+}
+
+.notebook::before {
+    content: '';
+    position: absolute;
+    left: 45px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ffadad;
+}
+
+.page {
+    flex: 1;
+    margin-left: 50px;
+    overflow: hidden;
+    position: relative;
+}
+
+.sayri-chat-history {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    gap: 15px;
+    padding-bottom: 10px;
+}
+
+/* --- ADVANCED SAYRI CARD --- */
+.sayri-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 12px;
+    border-radius: 12px;
+    border-left: 5px solid #ff4757;
+    box-shadow: 4px 4px 15px rgba(0,0,0,0.1);
+    animation: cardSlide 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    max-width: 95%;
+}
+
+.vip-card {
+    border: 2px solid #f1c40f;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+}
+
+@keyframes cardSlide {
+    0% { opacity: 0; transform: translateX(50px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+.sayri-card.exit {
+    animation: cardExit 0.5s ease-in forwards;
+}
+
+@keyframes cardExit {
+    100% { opacity: 0; transform: scale(0.85); height: 0; margin: 0; padding: 0; }
+}
+
+/* --- AVATAR ANIMATIONS --- */
+.avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.card-avatar {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px;
+    min-height: 50px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    object-fit: cover;
+    display: block !important;
+    animation: avatarEntry 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes avatarEntry {
+    0% { transform: scale(0) rotate(-180deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* VIP Rotating Border */
+.vip-card .card-avatar {
+    border: 2px solid #f1c40f;
+    animation: avatarEntry 0.8s forwards, vipGlow 2s infinite linear;
+}
+
+@keyframes vipGlow {
+    0% { box-shadow: 0 0 5px #f1c40f; }
+    50% { box-shadow: 0 0 15px #f39c12; }
+    100% { box-shadow: 0 0 5px #f1c40f; }
+}
+
+/* Speaking Pulse Effect */
+.speaking .card-avatar {
+    animation: speakingPulse 1s infinite;
+}
+
+@keyframes speakingPulse {
+    0% { box-shadow: 0 0 0 0px rgba(255, 71, 87, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+    100% { box-shadow: 0 0 0 0px rgba(255, 71, 87, 0); }
+}
+
+.winner-card {
+    border: 3px solid #f39c12;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+    transform: scale(1.05);
+}
+
+/* System Card Look (Auto Picks) */
+.system-card {
+    border-left: 5px solid #3498db;
+    background: rgba(240, 248, 255, 0.9);
+}
+
+.system-card .card-author {
+    color: #2980b9;
+}
+
+.paheli-active {
+    animation: pulsePaheli 1s infinite;
+}
+
+@keyframes pulsePaheli {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); background: #e67e22; }
+    100% { transform: scale(1); }
+}
+
+.card-author {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin: 0 0 4px 0;
+    font-family: Arial, sans-serif;
+}
+
+.vip-badge {
+    background: #f1c40f;
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-left: 5px;
+}
+
+.card-text {
+    font-size: 20px;
+    color: #2c3e50;
+    margin: 0;
+    line-height: 26px;
+    font-weight: 500;
+}
+
+/* History Box */
+.history-box {
+    margin-top: 20px;
+    width: 650px;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 15px 22px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Hype Goal Bar */
+.hype-goal-container {
+    margin-bottom: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hype-text {
+    color: #f1c40f;
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hype-bar-bg {
+    height: 10px;
+    background: #444;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.hype-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f1c40f, #e67e22);
+    box-shadow: 0 0 10px #f1c40f;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: #fff;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+.avatar-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    min-height: 50px;
+    align-items: center;
+    scrollbar-width: thin;
+}
+
+.avatar-list::-webkit-scrollbar { display: none; }
+
+.history-avatar-item {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(0,0,0,0.25);
+    animation: avatarEntry 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Takeover Animations */
+.takeover-emoji {
+    position: fixed;
+    bottom: -100px;
+    z-index: 10000;
+    pointer-events: none;
+    animation: takeoverFly 3s linear forwards;
+}
+
+@keyframes takeoverFly {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+}
+
+.floating-emoji {
+    position: absolute;
+    bottom: -50px;
+    font-size: 30px;
+    animation: floatUp 3s linear forwards;
+    opacity: 0;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* --- BIG THANKS OVERLAY --- */
+.big-thanks-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    animation: fadeInOverlay 0.5s ease forwards;
+}
+
+@keyframes fadeInOverlay {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.big-thanks-card {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+    border: 4px solid #f1c40f;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    width: 400px;
+    box-shadow: 0 0 40px rgba(241, 196, 15, 0.8);
+    animation: scaleUpCard 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes scaleUpCard {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.big-thanks-avatar {
+    width: 100px !important;
+    height: 100px !important;
+    border-radius: 50%;
+    border: 4px solid #ff4757;
+    object-fit: cover;
+    margin: 15px auto;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
+    animation: avatarBounce 1s infinite alternate;
+}
+
+@keyframes avatarBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-8px); }
+}
+
+.big-thanks-card h2 {
+    color: #ff4757;
+    margin: 0 0 10px 0;
+    font-size: 22px;
+}
+
+.big-thanks-card h3 {
+    color: #2c3e50;
+    margin: 5px 0 10px 0;
+    font-size: 20px;
+}
+
+.big-thanks-card p {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.big-thanks-overlay.fade-out {
+    animation: fadeOutOverlay 0.8s ease forwards;
+}
+
+@keyframes fadeOutOverlay {
+    100% { opacity: 0; transform: scale(1.1); }
+}
+
+/* --- PAHELI FULL SCREEN MODAL OVERLAY --- */
+.paheli-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99998;
+    animation: fadeInOverlay 0.5s ease forwards;
+}
+
+.paheli-modal-card {
+    background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+    border: 4px solid #fff;
+    border-radius: 24px;
+    padding: 40px;
+    text-align: center;
+    width: 500px;
+    max-width: 90%;
+    box-shadow: 0 0 50px rgba(243, 156, 18, 0.9);
+    animation: scaleUpCard 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.paheli-mobile-card h2 {
+    color: #fff;
+    margin: 0 0 15px 0;
+    font-size: 26px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.paheli-modal-card p {
+    color: #fff;
+    font-size: 22px;
+    line-height: 1.4;
+    margin: 0;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.paheli-modal-overlay.fade-out {
+    animation: fadeOutOverlay 0.8s ease forwards;
+}
+
+/* --- CROWN BADGE FOR VIP --- */
+.crown-badge {
+    position: absolute;
+    top: -12px;
+    right: -6px;
+    font-size: 22px;
+    filter: drop-shadow(0 0 6px #f1c40f);
+    animation: crownBounce 1s infinite alternate;
+    z-index: 10;
+}
+
+@keyframes crownBadgeBounce {
+    0% { transform: translateY(0) rotate(-10deg); }
+    100% { transform: translateY(-5px) rotate(10deg); }
+}
