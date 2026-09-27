@@ -235,5 +235,3 @@ function launchTakeoverAnimation(type) {
         }, i * 50);
     }
 }
-
-

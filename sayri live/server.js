@@ -35,6 +35,7 @@ let lastChatTime = Date.now();
 let hajiriCount = 0;
 const hajiriList = new Set();
 const userCommentTracker = new Map();
+const userLastChatTime = new Map();
 
 if (LIVE_ID) {
     const liveChat = new LiveChat({ liveId: LIVE_ID });
@@ -69,6 +70,16 @@ if (LIVE_ID) {
         const messageText = chatItem.message ? chatItem.message.map(m => m.text).join('') : '';
         const author = chatItem.author.name;
         const upperMsg = messageText.toUpperCase();
+
+        // --- 15 SECONDS ANTI-SPAM COOLDOWN PER USER ---
+        const nowTimeForSpam = Date.now();
+        if (userLastChatTime.has(author)) {
+            if (nowTimeForSpam - userLastChatTime.get(author) < 15000) {
+                console.log(`[SPAM SKIPPED] ${author} is commenting too fast.`);
+                return;
+            }
+        }
+        userLastChatTime.set(author, nowTimeForSpam);
 
         console.log(`[CHAT] ${author}: ${messageText}`);
 
@@ -145,7 +156,7 @@ if (LIVE_ID) {
         else if (upperMsg.includes('HAHA')) soundEffect = 'laugh';
         else if (upperMsg.includes('CLAP')) soundEffect = 'clap';
         else if (upperMsg.includes('OOPS')) soundEffect = 'oops';
-        else if (upperMsg.includes('PRESENT') && hajiriCount < 10 && !hajiriList.has(author)) {
+        else if (upperMsg.includes('VIP') && hajiriCount < 10 && !hajiriList.has(author)) {
             hajiriCount++;
             hajiriList.add(author);
             isVip = true;
