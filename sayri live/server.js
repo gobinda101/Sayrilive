@@ -21,28 +21,7 @@ function extractLiveId(url) {
 
 const LIVE_ID = extractLiveId(LIVE_URL);
 
-let BOT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3";
-
-function fetchChannelAvatar(url) {
-    if (!url) return;
-    https.get(url, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-            try {
-                const match = data.match(/<meta property="og:image" content="([^"]+)">/);
-                if (match && match[1]) {
-                    BOT_AVATAR = match[1];
-                    console.log(`[BOT AVATAR] Auto-fetched channel DP: ${BOT_AVATAR}`);
-                }
-            } catch (e) {}
-        });
-    }).on('error', () => {});
-}
-
-if (LIVE_URL) {
-    fetchChannelAvatar(LIVE_URL);
-}
+let BOT_AVATAR = "https://imgh.in/host/998e3q";
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -234,6 +213,12 @@ if (LIVE_ID) {
         else if (upperMsg.includes('HAHA')) soundEffect = 'laugh';
         else if (upperMsg.includes('CLAP')) soundEffect = 'clap';
         else if (upperMsg.includes('OOPS')) soundEffect = 'oops';
+        else if (upperMsg.includes('VIP') && hajiriCount < 10 && !hajiriList.has(author)) {
+            hajiriCount++;
+            hajiriList.add(author);
+            isVip = true;
+            resultText = `VIP Entry for ${author}! You are an Early Bird! 🌟`;
+        }
         else if (upperMsg.includes('I LOVE YOU') || upperMsg.includes('LOVE YOU')) {
             resultText = `Aww, I love you too ${author} ji! Aapka ye pyaar mere dil ko choo gaya... 💕`;
             takeover = 'HEARTS';
