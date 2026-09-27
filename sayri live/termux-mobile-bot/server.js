@@ -20,29 +20,8 @@ function extractLiveId(url) {
 }
 
 const LIVE_ID = extractLiveId(LIVE_URL);
-
-let BOT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3";
-
-function fetchChannelAvatar(url) {
-    if (!url) return;
-    https.get(url, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-            try {
-                const match = data.match(/<meta property="og:image" content="([^"]+)">/);
-                if (match && match[1]) {
-                    BOT_AVATAR = match[1];
-                    console.log(`[BOT AVATAR] Auto-fetched channel DP: ${BOT_AVATAR}`);
-                }
-            } catch (e) {}
-        });
-    }).on('error', () => {});
-}
-
-if (LIVE_URL) {
-    fetchChannelAvatar(LIVE_URL);
-}
+// ⚠️ APNE YOUTUBE CHANNEL KI DP / LOGO KA IMAGE LINK YAHAN PASTE KAREIN:
+const BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/2583/2583344.png";
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -234,6 +213,12 @@ if (LIVE_ID) {
         else if (upperMsg.includes('HAHA')) soundEffect = 'laugh';
         else if (upperMsg.includes('CLAP')) soundEffect = 'clap';
         else if (upperMsg.includes('OOPS')) soundEffect = 'oops';
+        else if (upperMsg.includes('VIP') && hajiriCount < 10 && !hajiriList.has(author)) {
+            hajiriCount++;
+            hajiriList.add(author);
+            isVip = true;
+            resultText = `VIP Entry for ${author}! You are an Early Bird! 🌟`;
+        }
         else if (upperMsg.includes('I LOVE YOU') || upperMsg.includes('LOVE YOU')) {
             resultText = `Aww, I love you too ${author} ji! Aapka ye pyaar mere dil ko choo gaya... 💕`;
             takeover = 'HEARTS';
@@ -250,8 +235,12 @@ if (LIVE_ID) {
             takeover = 'LAUGH';
         }
         else {
-            const cat = Math.random() < 0.8 ? 'LOVE' : ['SAD', 'DOSTI', 'RANDOM'][Math.floor(Math.random() * 3)];
-            resultText = sayris[cat][Math.floor(Math.random() * sayris[cat].length)];
+            if (messageText.length > 12 && !['LOVE', 'SAD', 'DOSTI', 'JOKE', 'VIP', 'DIL', 'FIRE', 'ROSE', 'CHOCOLATE', 'RING', 'BDAY', 'BIRTHDAY', 'JANAMDIN'].some(k => upperMsg.includes(k))) {
+                resultText = messageText;
+            } else {
+                const cat = Math.random() < 0.8 ? 'LOVE' : ['SAD', 'DOSTI', 'RANDOM'][Math.floor(Math.random() * 3)];
+                resultText = sayris[cat][Math.floor(Math.random() * sayris[cat].length)];
+            }
         }
 
         if (upperMsg.includes('DIL')) takeover = 'HEARTS';

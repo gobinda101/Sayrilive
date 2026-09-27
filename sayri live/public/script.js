@@ -81,6 +81,34 @@ socket.on('big-thanks', (data) => {
     }, 8000);
 });
 
+socket.on('big-vip', (data) => {
+    let avatarUrl = data.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'big-vip-overlay';
+    overlay.innerHTML = `
+        <div class="big-vip-card">
+            <div class="big-vip-avatar-wrapper">
+                <span class="big-vip-crown">👑</span>
+                <img src="${avatarUrl}" class="big-vip-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+            </div>
+            <h2>👑 NEW VIP SUPPORTER 👑</h2>
+            <h3>${data.name} Ji</h3>
+            <p>Aapne 10 comments poore karke permanent VIP badge hasil kar liya hai! Aap meri bahut hi special viewer ho. 🎉</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    launchTakeoverAnimation('HEARTS');
+    launchTakeoverAnimation('FIREWORKS');
+
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 800);
+    }, 8000);
+});
+
 const commentQueue = [];
 let isProcessing = false;
 
