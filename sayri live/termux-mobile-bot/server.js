@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const LIVE_URL = process.argv[2];
 
 function extractLiveId(url) {
@@ -32,11 +32,25 @@ const BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/2583/2583344.png";
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/tts', (req, res) => {
-    const text = req.query.text;
+    let text = req.query.text || '';
+    if (text.length > 165) {
+        const truncated = text.substring(0, 165);
+        const lastSpace = truncated.lastIndexOf(' ');
+        text = lastSpace > 80 ? truncated.substring(0, lastSpace) : truncated;
+    }
+
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=hi&client=tw-ob`;
     https.get(url, (response) => {
+        if (response.statusCode !== 200) {
+            console.error(`TTS API HTTP Error: ${response.statusCode} for text length: ${text.length}`);
+            res.status(500).end();
+            return;
+        }
         res.setHeader('Content-Type', 'audio/mpeg');
         response.pipe(res);
+    }).on('error', (err) => {
+        console.error('TTS Request Error:', err);
+        res.status(500).end();
     });
 });
 
@@ -133,6 +147,7 @@ function extractVsNames(messageText) {
 
 let isPaused = false;
 let isViewerListOpen = false;
+let isChatMode = false;
 
 function getViewerListData() {
     const list = [];
@@ -329,6 +344,40 @@ if (LIVE_ID) {
         const upperMsg = messageText.toUpperCase();
         const trimmedMsg = messageText.trim();
 
+        // --- VIEWERS DIRECTORY LIST COMMANDS (list / close list) ---
+        if (upperMsg.includes('CLOSE LIST') || upperMsg.includes('CLOSELIST') || upperMsg.includes('HIDE LIST')) {
+            isViewerListOpen = false;
+            io.emit('toggle-viewer-list', { show: false });
+            return;
+        }
+
+        if (upperMsg.includes('LIST') && !upperMsg.includes('PLAYLIST')) {
+            isViewerListOpen = true;
+            const viewers = getViewerListData();
+            io.emit('toggle-viewer-list', { show: true, viewers });
+
+            let announcement = "📋 Abhi tak kisi viewer ne comment nahi kiya hai. Aap sabhi comment karke Top 3 mein aayein!";
+            if (viewers.length >= 3) {
+                announcement = `📋 Aaj ke Top 3 Supporters hain: Pehle sthan par ${viewers[0].name} ji ${viewers[0].totalCount} comments ke sath, doosre sthan par ${viewers[1].name} ji, aur teesre sthan par ${viewers[2].name} ji! Aap sabhi ka dil se bahut-bahut shukriya! 🎉`;
+            } else if (viewers.length === 2) {
+                announcement = `📋 Aaj ke Top Supporters hain: Pehle sthan par ${viewers[0].name} ji ${viewers[0].totalCount} comments ke sath, aur doosre sthan par ${viewers[1].name} ji! Thank you so much! 🎉`;
+            } else if (viewers.length === 1) {
+                announcement = `📋 Aaj ke Top Supporter hain: ${viewers[0].name} ji ${viewers[0].totalCount} comments ke sath! Thank you so much! 🎉`;
+            }
+
+            io.emit('new-comment', {
+                name: "Ruchi Gupta 💖",
+                avatar: BOT_AVATAR,
+                sayri: announcement,
+                isVip: true,
+                vipLevel: 'HOST',
+                badge: '💖',
+                isHost: true,
+                isSystem: true
+            });
+            return;
+        }
+
         // --- GLOBAL SLASH COMMAND IGNORE FILTER FOR VIEWERS ---
         if (trimmedMsg.startsWith('/')) {
             console.log(`[SLASH COMMAND IGNORED] ${author}: ${messageText}`);
@@ -430,41 +479,6 @@ if (LIVE_ID) {
                 return;
             }
 
-            // HOST CONTROL 4: LIST (Show Viewers Directory List)
-            if (upperMsg === 'LIST' || upperMsg === '/LIST' || upperMsg === 'SHOW LIST') {
-                isViewerListOpen = true;
-                const viewers = getViewerListData();
-                io.emit('toggle-viewer-list', { show: true, viewers });
-                io.emit('new-comment', {
-                    name: "Ruchi Gupta 💖",
-                    avatar: BOT_AVATAR,
-                    sayri: "📋 Stream ke sabhi active viewers ki list screen par show kar di gayi hai!",
-                    isVip: true,
-                    vipLevel: 'HOST',
-                    badge: '💖',
-                    isHost: true,
-                    isSystem: true
-                });
-                return;
-            }
-
-            // HOST CONTROL 5: CLOSE LIST (Hide Viewers Directory List)
-            if (upperMsg === 'CLOSE LIST' || upperMsg === '/CLOSE LIST' || upperMsg === 'HIDE LIST' || upperMsg === 'CLOSELIST') {
-                isViewerListOpen = false;
-                io.emit('toggle-viewer-list', { show: false });
-                io.emit('new-comment', {
-                    name: "Ruchi Gupta 💖",
-                    avatar: BOT_AVATAR,
-                    sayri: "❌ Viewers list ko close kar diya gaya hai!",
-                    isVip: true,
-                    vipLevel: 'HOST',
-                    badge: '💖',
-                    isHost: true,
-                    isSystem: true
-                });
-                return;
-            }
-
             // HOST CONTROL 6: END VS BATTLE / CLOSE VS
             if (upperMsg === 'END VS' || upperMsg === '/END VS' || upperMsg === 'CLOSE VS' || upperMsg === 'CLOSEVS') {
                 if (activeBattle) {
@@ -514,6 +528,40 @@ if (LIVE_ID) {
                     isHost: true,
                     isSystem: true,
                     takeover: 'FIREWORKS'
+                });
+                return;
+            }
+
+            // HOST CONTROL 7: CHAT MODE (Show & Read all viewers' actual comment messages)
+            if (upperMsg.includes('CHAT MODE') || upperMsg.includes('/CHAT MODE') || upperMsg === 'CHATMODE') {
+                isChatMode = true;
+                io.emit('new-comment', {
+                    name: "Ruchi Gupta 💖",
+                    avatar: BOT_AVATAR,
+                    sayri: "💬 CHAT MODE ON! Ab sabhi viewers ke live comments sidhe screen par show honge aur padhe jayenge!",
+                    isVip: true,
+                    vipLevel: 'HOST',
+                    badge: '💖',
+                    isHost: true,
+                    isSystem: true,
+                    takeover: 'HEARTS'
+                });
+                return;
+            }
+
+            // HOST CONTROL 8: SAYRI MODE (Switch back to Shayari Live Mode)
+            if (upperMsg.includes('SAYRI MODE') || upperMsg.includes('/SAYRI MODE') || upperMsg === 'SAYRIMODE' || upperMsg.includes('SHAYARI MODE')) {
+                isChatMode = false;
+                io.emit('new-comment', {
+                    name: "Ruchi Gupta 💖",
+                    avatar: BOT_AVATAR,
+                    sayri: "📜 SAYRI MODE ON! Ab sabhi comments par pyaar bhari shayaris aur quotes chalenge!",
+                    isVip: true,
+                    vipLevel: 'HOST',
+                    badge: '💖',
+                    isHost: true,
+                    isSystem: true,
+                    takeover: 'HEARTS'
                 });
                 return;
             }
@@ -688,6 +736,10 @@ if (LIVE_ID) {
             });
             return;
         }
+        if (isChatMode) {
+            // IN CHAT MODE: Show & read viewer's exact typed comment message!
+            resultText = messageText;
+        }
         else if (isFrequentComment) {
             resultText = `Suno na ${author} ji, aapka ye baar-baar aana aur itna pyaar dena bahut achha lag raha hai, please video ko like aur channel ko subscribe zaroor kar dena! ❤️`;
         }
@@ -782,6 +834,7 @@ if (LIVE_ID) {
             sayri: resultText,
             isVip: isVip || hajiriList.has(author),
             vipLevel: userRecord.vipLevel,
+            isChatMode: isChatMode,
             takeover: takeover,
             soundEffect: soundEffect
         });
