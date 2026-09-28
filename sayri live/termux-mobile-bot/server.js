@@ -60,6 +60,50 @@ const hajiriList = new Set();
 const userCommentTracker = new Map();
 const userLastChatTime = new Map();
 
+const STATE_FILE = path.join(__dirname, 'viewers_state.json');
+
+function loadState() {
+    try {
+        if (fs.existsSync(STATE_FILE)) {
+            const raw = fs.readFileSync(STATE_FILE, 'utf8');
+            const data = JSON.parse(raw);
+            if (data.users) {
+                for (let [username, record] of Object.entries(data.users)) {
+                    userCommentTracker.set(username, record);
+                }
+            }
+            if (data.hajiri) {
+                data.hajiri.forEach(u => hajiriList.add(u));
+                hajiriCount = hajiriList.size;
+            }
+            console.log(`📂 Loaded persisted state: ${userCommentTracker.size} viewers, ${hajiriList.size} hajiri entries.`);
+        }
+    } catch (e) {
+        console.error('❌ Error loading viewer state:', e);
+    }
+}
+
+function saveState() {
+    try {
+        const usersObj = {};
+        for (let [username, record] of userCommentTracker.entries()) {
+            usersObj[username] = record;
+        }
+        const data = {
+            users: usersObj,
+            hajiri: Array.from(hajiriList)
+        };
+        fs.writeFileSync(STATE_FILE, JSON.stringify(data, null, 2), 'utf8');
+        if (typeof io !== 'undefined') {
+            io.emit('update-leaderboard', { viewers: getViewerListData() });
+        }
+    } catch (e) {
+        console.error('❌ Error saving viewer state:', e);
+    }
+}
+
+loadState();
+
 const TAAREEF_LINES = [
     "Aap humari live mehfil ke sabse haseen aur pyaare viewer ho! Aapka saath humare liye bahut khas hai! 💖✨",
     "Aapki presence se humari live stream mein chaar chaand lag jaate hain! Aise hi apna pyaar banaye rakhiye! 🌸",
@@ -224,6 +268,7 @@ let lastCommenterObj = null;
 // --- SOCKET CONNECTION INITIAL WELCOME CARD ---
 io.on('connection', (socket) => {
     console.log('⚡ New client connected to overlay');
+    socket.emit('update-leaderboard', { viewers: getViewerListData() });
     const welcomeText = getIdleText(sayris, idlePromptsData);
     socket.emit('new-comment', {
         name: "Ruchi Gupta 💖",
@@ -653,11 +698,9 @@ if (LIVE_ID) {
         userRecord.totalCount = (userRecord.totalCount || 0) + 1;
         userRecord.lastTime = nowTime;
         userRecord.avatar = thumbnail;
+        saveState();
 
-        // If List Overlay is open on screen, update it with new comment counts in real time
-        if (isViewerListOpen) {
-            io.emit('toggle-viewer-list', { show: true, viewers: getViewerListData() });
-        }
+        // Viewer list will only open when 'list' is typed and auto-close after 8 seconds without re-triggering on comments
 
         let isDoubleComment = false;
         let isFrequentComment = false;
@@ -763,6 +806,7 @@ if (LIVE_ID) {
             hajiriList.add(author);
             if (userRecord.vipLevel === 'NONE') userRecord.vipLevel = 'BRONZE';
             isVip = true;
+            saveState();
             resultText = `VIP Entry for ${author}! You are an Early Bird! 🌟`;
         }
         else if (upperMsg.includes('I LOVE YOU') || upperMsg.includes('LOVE YOU')) {

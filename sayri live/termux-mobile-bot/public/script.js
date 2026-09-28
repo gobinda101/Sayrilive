@@ -238,7 +238,46 @@ socket.on('viewer-praise', (data) => {
     }, 6000);
 });
 
-// --- DYNAMIC LIVE VIEWERS DIRECTORY LIST OVERLAY (AUTO-CLOSE IN 5 SECONDS) ---
+// --- TOP 3 ROMANTIC SUPPORTERS LEADERBOARD ---
+socket.on('update-leaderboard', (data) => {
+    const leaderboardList = document.getElementById('leaderboard-list');
+    if (!leaderboardList) return;
+
+    const viewers = data.viewers || [];
+    if (viewers.length === 0) {
+        leaderboardList.innerHTML = '<span style="color: #fff; font-size: 11px; opacity: 0.8;">Comments karke Top 3 mein aayen! ✨</span>';
+        return;
+    }
+
+    const top3 = viewers.slice(0, 3);
+    leaderboardList.innerHTML = top3.map((v, index) => {
+        let badgeEmoji = '';
+        if (v.vipLevel === 'HOST') badgeEmoji = '💖';
+        else if (v.vipLevel === 'DIAMOND') badgeEmoji = '💎';
+        else if (v.vipLevel === 'GOLD') badgeEmoji = '👑';
+        else if (v.vipLevel === 'BRONZE') badgeEmoji = '🥉';
+        else {
+            if (index === 0) badgeEmoji = '👑';
+            else if (index === 1) badgeEmoji = '🥈';
+            else if (index === 2) badgeEmoji = '🥉';
+        }
+
+        let avatarUrl = v.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+        if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+        return `
+            <div class="leaderboard-item">
+                <img src="${avatarUrl}" class="leaderboard-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+                <div class="leaderboard-info">
+                    <span class="leaderboard-name">${index + 1}. ${v.name} ${badgeEmoji}</span>
+                    <span class="leaderboard-score">${v.totalCount} Comments</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+});
+
+// --- DYNAMIC LIVE VIEWERS DIRECTORY LIST OVERLAY (AUTO-CLOSE IN 8 SECONDS) ---
 let viewerListTimer = null;
 
 socket.on('toggle-viewer-list', (data) => {
@@ -293,19 +332,19 @@ socket.on('toggle-viewer-list', (data) => {
                 ${viewersHtml}
             </div>
             <div class="viewer-list-footer">
-                Auto-closing in 5 seconds
+                Auto-closing in 8 seconds
             </div>
         </div>
     `;
 
-    // Auto-close overlay after 9 seconds so TTS reads Top 3 viewers completely!
+    // Auto-close overlay after 8 seconds
     if (viewerListTimer) clearTimeout(viewerListTimer);
     viewerListTimer = setTimeout(() => {
         if (existingModal) {
             existingModal.classList.add('fade-out');
             setTimeout(() => existingModal.remove(), 500);
         }
-    }, 9000);
+    }, 8000);
 });
 
 // --- VS BATTLE & LIVE VOTING OVERLAY ---
