@@ -238,11 +238,14 @@ socket.on('viewer-praise', (data) => {
     }, 6000);
 });
 
-// --- DYNAMIC LIVE VIEWERS DIRECTORY LIST OVERLAY ---
+// --- DYNAMIC LIVE VIEWERS DIRECTORY LIST OVERLAY (AUTO-CLOSE IN 5 SECONDS) ---
+let viewerListTimer = null;
+
 socket.on('toggle-viewer-list', (data) => {
     let existingModal = document.getElementById('viewer-list-modal-overlay');
 
     if (!data.show) {
+        if (viewerListTimer) clearTimeout(viewerListTimer);
         if (existingModal) {
             existingModal.classList.add('fade-out');
             setTimeout(() => existingModal.remove(), 500);
@@ -290,10 +293,19 @@ socket.on('toggle-viewer-list', (data) => {
                 ${viewersHtml}
             </div>
             <div class="viewer-list-footer">
-                Type 'close list' in chat to close
+                Auto-closing in 5 seconds
             </div>
         </div>
     `;
+
+    // Auto-close overlay after 9 seconds so TTS reads Top 3 viewers completely!
+    if (viewerListTimer) clearTimeout(viewerListTimer);
+    viewerListTimer = setTimeout(() => {
+        if (existingModal) {
+            existingModal.classList.add('fade-out');
+            setTimeout(() => existingModal.remove(), 500);
+        }
+    }, 9000);
 });
 
 // --- VS BATTLE & LIVE VOTING OVERLAY ---
@@ -550,7 +562,13 @@ async function processQueue() {
         }
         cleanName = cleanName.replace(/[0-9]/g, '').trim();
 
-        const prefix = data.isSystem ? '' : (cleanName + " ke liye... ");
+        let prefix = "";
+        if (data.isChatMode) {
+            prefix = data.isSystem ? '' : (cleanName + " ji bol rahe hain... ");
+        } else {
+            prefix = data.isSystem ? '' : (cleanName + " ke liye... ");
+        }
+
         const rawText = prefix + data.sayri;
         const ttsText = rawText.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '').trim();
         const url = `/tts?text=${encodeURIComponent(ttsText)}`;

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayri Live - Streamer Web Control Panel 💖</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Top Navigation Header -->
+        <header class="app-header">
+            <div class="logo-group">
+                <span class="logo-icon">💖</span>
+                <h1>SAYRI LIVE <span>CONTROL PANEL</span></h1>
+            </div>
+            <div id="connection-status-badge" class="status-badge status-offline">
+                <span class="status-dot"></span> <span id="status-text">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <main class="dashboard-grid">
+
+            <!-- Left Column: Stream Setup & Quick Toggles -->
+            <section class="card setup-card">
+                <h2>🎥 YouTube Live Connection</h2>
+                <div class="input-group">
+                    <input type="text" id="live-url-input" placeholder="Paste YouTube Live URL or Video ID (e.g. jfKfPbcN1EQ)...">
+                    <button id="btn-connect-stream" class="btn btn-primary">Connect Stream 🚀</button>
+                </div>
+                <div class="obs-link-box">
+                    <span class="obs-label">OBS Overlay URL:</span>
+                    <input type="text" id="obs-url-input" readonly value="http://localhost:3000">
+                    <button id="btn-copy-obs" class="btn btn-secondary">Copy Link 📋</button>
+                </div>
+            </section>
+
+            <!-- Modes Control Card -->
+            <section class="card mode-card">
+                <h2>⚙️ Stream Modes & Audio Controls</h2>
+                <div class="button-grid">
+                    <button id="btn-mode-sayri" class="btn btn-mode active">
+                        <span class="btn-icon">📜</span>
+                        <span class="btn-label">Sayri Mode</span>
+                        <small>Convert comments to Shayari</small>
+                    </button>
+                    <button id="btn-mode-chat" class="btn btn-mode">
+                        <span class="btn-icon">💬</span>
+                        <span class="btn-label">Chat Mode</span>
+                        <small>Read exact comments directly</small>
+                    </button>
+                    <button id="btn-pause-audio" class="btn btn-warning">
+                        <span class="btn-icon">⏸️</span>
+                        <span class="btn-label">Pause Audio</span>
+                    </button>
+                    <button id="btn-resume-audio" class="btn btn-success">
+                        <span class="btn-icon">▶️</span>
+                        <span class="btn-label">Resume Audio</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Quick Action Triggers -->
+            <section class="card actions-card">
+                <h2>🌟 Quick Live Triggers</h2>
+                <div class="button-grid">
+                    <button id="btn-trigger-winner" class="btn btn-action">
+                        <span class="btn-icon">🏆</span>
+                        <span class="btn-label">Top Winner Popup (3s)</span>
+                    </button>
+                    <button id="btn-toggle-list" class="btn btn-action">
+                        <span class="btn-icon">📋</span>
+                        <span class="btn-label">Show Viewers Directory</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Custom Host Announcement -->
+            <section class="card announcement-card">
+                <h2>📣 Send Host Announcement</h2>
+                <div class="announcement-form">
+                    <input type="text" id="host-msg-input" placeholder="Type host message (e.g. Aaj shaam को special live contest hoga)...">
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="chk-read-tts" checked> Read aloud via Voice TTS 🎙️
+                        </label>
+                        <button id="btn-send-announcement" class="btn btn-primary">Send Announcement 🚀</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Viewer Taareef / Praise Section -->
+            <section class="card praise-card">
+                <h2>💖 Viewer Taareef (Big DP Popup)</h2>
+                <div class="input-group">
+                    <input type="text" id="praise-viewer-input" placeholder="Type viewer name (e.g. Priya or Rahul)...">
+                    <button id="btn-praise-viewer" class="btn btn-heart">Send Big DP Taareef 💖</button>
+                </div>
+            </section>
+
+            <!-- VS Battle Creator Section -->
+            <section class="card vs-card">
+                <h2>⚔️ VS Battle & Live Voting Creator</h2>
+                <div class="vs-form-grid">
+                    <div class="vs-input-wrapper">
+                        <label>Option A Viewer Name:</label>
+                        <input type="text" id="vs-user-a" placeholder="e.g. Rahul">
+                    </div>
+                    <div class="vs-badge">VS</div>
+                    <div class="vs-input-wrapper">
+                        <label>Option B Viewer Name:</label>
+                        <input type="text" id="vs-user-b" placeholder="e.g. Rohit">
+                    </div>
+                </div>
+                <div class="vs-actions-row">
+                    <button id="btn-start-vs" class="btn btn-danger">Start VS Battle ⚔️</button>
+                    <button id="btn-end-vs" class="btn btn-secondary">Close VS Battle ❌</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
