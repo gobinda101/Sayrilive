@@ -17,12 +17,13 @@ const traps = [
     "❤️ Comment 'LOVE' or 'SAD' to control my mood! ❤️",
     "✨ Type 'DIL' for Heart Explosion! ✨",
     "✨ Type 'FIRE' for Firework Show! ✨",
-    "😂 'JOKE' type karo, ek majedar kahani suno! 😂"
+    "😂 'JOKE' type karo, ek majedar kahani suno! 😂",
+    "💎 25 Comments = DIAMOND LEGEND BADGE! 💎"
 ];
 
 let currentTrapIndex = 0;
 setInterval(() => {
-    if (!bannerEl.classList.contains('paheli-active')) {
+    if (bannerEl && !bannerEl.classList.contains('paheli-active')) {
         currentTrapIndex = (currentTrapIndex + 1) % traps.length;
         bannerEl.style.opacity = 0;
         setTimeout(() => {
@@ -64,16 +65,15 @@ socket.on('big-thanks', (data) => {
     overlay.className = 'big-thanks-overlay';
     overlay.innerHTML = `
         <div class="big-thanks-card">
-            <h2>💖 SPECIAL THANKS 💖</h2>
+            <h2>🥉 BRONZE SUPPORTER 🥉</h2>
             <img src="${avatarUrl}" class="big-thanks-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
             <h3>${data.name} Ji</h3>
-            <p>Aapne 5 se zyada comments karke hum par jo pyaar barasaya hai, uske liye dil se bahut-bahut shukriya! Thank you so much! 🎉</p>
+            <p>Aapne 5 comments karke Bronze Badge haasil kar liya hai! Hum par jo pyaara barasaya hai, uske liye dil se shukriya! 🎉</p>
         </div>
     `;
     document.body.appendChild(overlay);
 
     launchTakeoverAnimation('HEARTS');
-    launchTakeoverAnimation('FIREWORKS');
 
     setTimeout(() => {
         overlay.classList.add('fade-out');
@@ -93,9 +93,9 @@ socket.on('big-vip', (data) => {
                 <span class="big-vip-crown">👑</span>
                 <img src="${avatarUrl}" class="big-vip-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
             </div>
-            <h2>👑 NEW VIP SUPPORTER 👑</h2>
+            <h2>👑 GOLD VIP SUPPORTER 👑</h2>
             <h3>${data.name} Ji</h3>
-            <p>Aapne 10 comments poore karke permanent VIP badge hasil kar liya hai! Aap meri bahut hi special viewer ho. 🎉</p>
+            <p>Aapne 10 comments poore karke permanent Gold VIP badge 👑 hasil kar liya hai! Aap meri bahut hi special viewer ho. 🎉</p>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -109,15 +109,148 @@ socket.on('big-vip', (data) => {
     }, 8000);
 });
 
+// --- DIAMOND LEGEND OVERLAY ---
+socket.on('big-diamond', (data) => {
+    let avatarUrl = data.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'big-diamond-overlay';
+    overlay.innerHTML = `
+        <div class="big-diamond-card">
+            <div class="big-diamond-avatar-wrapper">
+                <span class="big-diamond-crown">💎</span>
+                <img src="${avatarUrl}" class="big-diamond-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+            </div>
+            <h2>💎 DIAMOND LEGEND 💎</h2>
+            <h3>${data.name} Ji</h3>
+            <p>WAH! Aapne 25 comments poore karke humare highest Diamond Legend badge 💎 hasil kar liya hai! Aap humari mehfil ke sabse chamakte sitare ho! 🎉</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    launchTakeoverAnimation('HEARTS');
+    launchTakeoverAnimation('FIREWORKS');
+
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 800);
+    }, 8000);
+});
+
+// --- LUCKY VIEWER / SPIN THE WHEEL OVERLAY ---
+socket.on('lucky-winner', (data) => {
+    let avatarUrl = data.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'lucky-winner-overlay';
+    overlay.innerHTML = `
+        <div class="lucky-winner-card">
+            <div class="lucky-winner-avatar-wrapper">
+                <span class="lucky-winner-crown">👑</span>
+                <img src="${avatarUrl}" class="lucky-winner-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+            </div>
+            <h2>✨ LUCKY SHAYARI KING / QUEEN ✨</h2>
+            <h3>${data.name} Ji</h3>
+            <p>Mubarak ho! Aapko aaj ki live mehfil ka Lucky Viewer chuna gaya hai! Aapke ${data.totalCount || 1} comments ne mehfil mein jaan daal di! 🎉</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    launchTakeoverAnimation('HEARTS');
+    launchTakeoverAnimation('FIREWORKS');
+
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 800);
+    }, 8000);
+});
+
+// --- TOGGLE SPEECH (STOP / START COMMANDS) ---
+let isSystemPaused = false;
+
+socket.on('toggle-speech', (data) => {
+    isSystemPaused = data.paused;
+    if (isSystemPaused) {
+        stopCurrentAudio();
+    } else if (commentQueue.length > 0 && !isProcessing) {
+        processQueue();
+    }
+});
+
+// --- POP WINNER PROFILE OVERLAY (POPUP FOR 3 SECONDS) ---
+socket.on('pop-winner', (data) => {
+    let avatarUrl = data.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'pop-winner-overlay';
+    overlay.innerHTML = `
+        <div class="pop-winner-card">
+            <div class="pop-winner-avatar-wrapper">
+                <span class="pop-winner-crown">🏆</span>
+                <img src="${avatarUrl}" class="pop-winner-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+            </div>
+            <h2>🏆 TOP COMMENTER WINNER 🏆</h2>
+            <h3>${data.name} Ji</h3>
+            <p>Sabse zyada 🌟 ${data.totalCount || 0} Comments 🌟</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    launchTakeoverAnimation('FIREWORKS');
+    launchTakeoverAnimation('HEARTS');
+
+    // Auto remove overlay after EXACTLY 3 SECONDS
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 400);
+    }, 3000);
+});
+
+// --- VIEWER PRAISE / TAAREEF BIG DP OVERLAY ---
+socket.on('viewer-praise', (data) => {
+    let avatarUrl = data.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'praise-modal-overlay';
+    overlay.innerHTML = `
+        <div class="praise-modal-card">
+            <div class="praise-avatar-wrapper">
+                <span class="praise-heart-badge">💖</span>
+                <img src="${avatarUrl}" class="praise-avatar-big" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+            </div>
+            <h2>💖 DIL SE TAAREEF 💖</h2>
+            <h3>${data.name} Ji</h3>
+            <p>${data.praiseText || 'Aap humare live stream ke sabse pyaare viewer hain!'}</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    launchTakeoverAnimation('HEARTS');
+    launchTakeoverAnimation('FIREWORKS');
+
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 800);
+    }, 6000);
+});
+
 const commentQueue = [];
 let isProcessing = false;
-
-async function processIncomingData(data) {
-    commentQueue.push(data);
-    if (!isProcessing) processQueue();
-}
-
 let currentAudioElement = null;
+
+function stopCurrentAudio() {
+    if (currentAudioElement) {
+        try {
+            currentAudioElement.pause();
+            currentAudioElement.src = "";
+            currentAudioElement = null;
+        } catch (e) {}
+    }
+}
 
 function playAudioSecurely(url, timeoutMs) {
     return new Promise((resolve) => {
@@ -154,14 +287,27 @@ function playAudioSecurely(url, timeoutMs) {
     });
 }
 
-async function processQueue() {
-    if (commentQueue.length === 0) { isProcessing = false; return; }
-    isProcessing = true;
-    const data = commentQueue.shift();
-
+// --- RENDER CARD DIRECTLY ON DAIRY SCREEN ---
+function renderCardDOM(data) {
     const card = document.createElement('div');
-    // Add 'system-card' class for auto-featured posts
-    card.className = `sayri-card ${data.isVip ? 'vip-card' : ''} ${data.takeover === 'WINNER' ? 'winner-card' : ''} ${data.isSystem ? 'system-card' : ''}`;
+
+    let vipCardClass = '';
+    let badgeEmoji = '';
+    if (data.isHost || data.vipLevel === 'HOST') {
+        vipCardClass = 'host-card';
+        badgeEmoji = '💖';
+    } else if (data.vipLevel === 'DIAMOND') {
+        vipCardClass = 'diamond-card';
+        badgeEmoji = '💎';
+    } else if (data.vipLevel === 'GOLD' || data.isVip) {
+        vipCardClass = 'vip-card';
+        badgeEmoji = '👑';
+    } else if (data.vipLevel === 'BRONZE') {
+        vipCardClass = 'bronze-card';
+        badgeEmoji = '🥉';
+    }
+
+    card.className = `sayri-card ${vipCardClass} ${data.takeover === 'WINNER' ? 'winner-card' : ''} ${data.isSystem ? 'system-card' : ''}`;
 
     let avatarUrl = data.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
     if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
@@ -169,10 +315,10 @@ async function processQueue() {
     card.innerHTML = `
         <div class="avatar-wrapper">
             <img src="${avatarUrl}" class="card-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
-            ${data.isVip ? '<span class="crown-badge">👑</span>' : ''}
+            ${badgeEmoji ? `<span class="crown-badge">${badgeEmoji}</span>` : ''}
         </div>
         <div class="card-body">
-            <h4 class="card-author">${data.name} ${data.isVip ? '👑' : ''}</h4>
+            <h4 class="card-author">${data.name} ${badgeEmoji}</h4>
             <p class="card-text">${data.sayri}</p>
         </div>
     `;
@@ -186,25 +332,61 @@ async function processQueue() {
 
     if (data.takeover) launchTakeoverAnimation(data.takeover);
 
-    // Add to History Box (Only for real users, not system auto-picks)
     if (!data.isSystem) {
         addAvatarToHistory(data.name, avatarUrl);
     }
 
-    card.classList.add('speaking');
+    return card;
+}
+
+// --- PROCESS INCOMING COMMENT (INSTANT SHOW FOR HOST @Ruchi-gupta101) ---
+async function processIncomingData(data) {
+    if (data.isHost) {
+        // Render card on dairy screen INSTANTLY!
+        const card = renderCardDOM(data);
+
+        // If host typed "Read", interrupt TTS audio and speak host message immediately!
+        if (!data.noTTS) {
+            stopCurrentAudio();
+            card.classList.add('speaking');
+            const ttsText = data.sayri.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '').trim();
+            const url = `/tts?text=${encodeURIComponent(ttsText)}`;
+            playAudioSecurely(url, 15000).then(() => card.classList.remove('speaking'));
+        }
+        return;
+    }
+
+    commentQueue.push(data);
+    if (!isProcessing) processQueue();
+}
+
+async function processQueue() {
+    if (commentQueue.length === 0 || isSystemPaused) { isProcessing = false; return; }
+    isProcessing = true;
+    const data = commentQueue.shift();
+
+    const card = renderCardDOM(data);
 
     if (data.soundEffect && sounds[data.soundEffect]) {
         await playAudioSecurely(sounds[data.soundEffect], 4000);
     }
 
-    const cleanName = data.name.replace(/@/g, '').trim();
-    const prefix = data.isSystem ? '' : (cleanName + " ke liye... ");
-    const rawText = prefix + data.sayri;
-    const ttsText = rawText.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '').trim();
-    const url = `/tts?text=${encodeURIComponent(ttsText)}`;
+    if (!data.noTTS) {
+        card.classList.add('speaking');
+        let cleanName = data.name.replace(/@/g, '').trim();
+        if (cleanName.includes('-')) {
+            cleanName = cleanName.split('-')[0].trim();
+        }
+        cleanName = cleanName.replace(/[0-9]/g, '').trim();
 
-    await playAudioSecurely(url, 15000);
-    card.classList.remove('speaking');
+        const prefix = data.isSystem ? '' : (cleanName + " ke liye... ");
+        const rawText = prefix + data.sayri;
+        const ttsText = rawText.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '').trim();
+        const url = `/tts?text=${encodeURIComponent(ttsText)}`;
+
+        await playAudioSecurely(url, 15000);
+        card.classList.remove('speaking');
+    }
 
     setTimeout(processQueue, 800);
 }
@@ -241,12 +423,14 @@ function addAvatarToHistory(name, avatarUrl) {
         }
     }
 
-    const img = document.createElement('img');
-    img.src = avatarUrl;
-    img.className = 'history-avatar-item';
-    img.title = name;
-    avatarHistoryList.appendChild(img);
-    avatarHistoryList.scrollLeft = avatarHistoryList.scrollWidth;
+    if (avatarHistoryList) {
+        const img = document.createElement('img');
+        img.src = avatarUrl;
+        img.className = 'history-avatar-item';
+        img.title = name;
+        avatarHistoryList.appendChild(img);
+        avatarHistoryList.scrollLeft = avatarHistoryList.scrollWidth;
+    }
 }
 
 function launchTakeoverAnimation(type) {
@@ -258,10 +442,8 @@ function launchTakeoverAnimation(type) {
             el.className = 'takeover-emoji';
             el.innerText = emoji;
             el.style.left = Math.random() * 100 + 'vw';
-            emojiContainer.appendChild(el);
+            if (emojiContainer) emojiContainer.appendChild(el);
             setTimeout(() => el.remove(), 3000);
         }, i * 50);
     }
 }
-
-
