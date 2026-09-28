@@ -77,6 +77,60 @@ function findMatchingViewer(messageText) {
     return null;
 }
 
+let activeBattle = null;
+
+function extractVsNames(messageText) {
+    if (!messageText) return null;
+    const cleanMsg = messageText.replace(/@/g, '').trim();
+    const match = cleanMsg.match(/(.+?)\s+(?:vs|versus)\s+(.+)/i);
+    if (!match) return null;
+
+    const nameA = match[1].trim();
+    const nameB = match[2].trim();
+
+    const userA = findMatchingViewer(nameA);
+    const userB = findMatchingViewer(nameB);
+
+    if (userA && userB && userA.username !== userB.username) {
+        return { userA, userB };
+    }
+    return null;
+}
+
+function detectVoteChoice(messageText) {
+    if (!messageText) return null;
+    const cleanMsg = messageText.trim().toUpperCase();
+
+    const isA = /^A+$/i.test(cleanMsg) || /^1+$/i.test(cleanMsg) || cleanMsg.includes('OPTION A') || cleanMsg === 'A' || cleanMsg.startsWith('A ');
+    const isB = /^B+$/i.test(cleanMsg) || /^2+$/i.test(cleanMsg) || cleanMsg.includes('OPTION B') || cleanMsg === 'B' || cleanMsg.startsWith('B ');
+
+    if (isA && !isB) return 'A';
+    if (isB && !isA) return 'B';
+
+    if (/A{1,}/i.test(cleanMsg) && !/B{1,}/i.test(cleanMsg) && cleanMsg.length <= 20) return 'A';
+    if (/B{1,}/i.test(cleanMsg) && !/A{1,}/i.test(cleanMsg) && cleanMsg.length <= 20) return 'B';
+
+    return null;
+}
+
+function extractVsNames(messageText) {
+    if (!messageText) return null;
+    const cleanMsg = messageText.replace(/@/g, '').trim();
+    const match = cleanMsg.match(/(.+?)\s+(?:vs|versus)\s+(.+)/i);
+    if (!match) return null;
+
+    const nameA = match[1].trim();
+    const nameB = match[2].trim();
+
+    const userA = findMatchingViewer(nameA);
+    const userB = findMatchingViewer(nameB);
+
+    if (userA && userB && userA.username !== userB.username) {
+        return { userA, userB };
+    }
+    return null;
+}
+
 let isPaused = false;
 let isViewerListOpen = false;
 
@@ -411,6 +465,59 @@ if (LIVE_ID) {
                 return;
             }
 
+            // HOST CONTROL 6: END VS BATTLE / CLOSE VS
+            if (upperMsg === 'END VS' || upperMsg === '/END VS' || upperMsg === 'CLOSE VS' || upperMsg === 'CLOSEVS') {
+                if (activeBattle) {
+                    let winner = activeBattle.userA.votes >= activeBattle.userB.votes ? activeBattle.userA : activeBattle.userB;
+                    if (activeBattle.userA.votes === activeBattle.userB.votes) {
+                        winner = { name: "Both (Tie)", votes: activeBattle.userA.votes, avatar: activeBattle.userA.avatar };
+                    }
+
+                    io.emit('end-vs-battle', { winner, userA: activeBattle.userA, userB: activeBattle.userB });
+                    io.emit('new-comment', {
+                        name: "Ruchi Gupta 💖",
+                        avatar: BOT_AVATAR,
+                        sayri: `🏆 WAH! VS Battle samapt ho gaya hai! Winner hain ${winner.name} Ji ${winner.votes} votes ke sath! Mubarakbaad! 🎉`,
+                        isVip: true,
+                        vipLevel: 'HOST',
+                        badge: '💖',
+                        isHost: true,
+                        isSystem: true,
+                        takeover: 'FIREWORKS'
+                    });
+                    activeBattle = null;
+                }
+                return;
+            }
+
+            // CHECK IF HOST IS STARTING A VS BATTLE (e.g. @rahul vs @rohit)
+            const vsMatched = extractVsNames(messageText);
+            if (vsMatched) {
+                activeBattle = {
+                    userA: { name: vsMatched.userA.username, avatar: vsMatched.userA.avatar, votes: 0 },
+                    userB: { name: vsMatched.userB.username, avatar: vsMatched.userB.avatar, votes: 0 },
+                    voters: new Set()
+                };
+
+                io.emit('start-vs-battle', {
+                    userA: activeBattle.userA,
+                    userB: activeBattle.userB
+                });
+
+                io.emit('new-comment', {
+                    name: "Ruchi Gupta 💖",
+                    avatar: BOT_AVATAR,
+                    sayri: `⚔️ MAHASANGRAM! ${vsMatched.userA.username} VS ${vsMatched.userB.username}! Sabhi viewers 'A' ya 'B' comment karke vote karein ki kaun best shayar hai! ⚔️`,
+                    isVip: true,
+                    vipLevel: 'HOST',
+                    badge: '💖',
+                    isHost: true,
+                    isSystem: true,
+                    takeover: 'FIREWORKS'
+                });
+                return;
+            }
+
             // Ignore host slash commands
             if (trimmedMsg.startsWith('/')) {
                 console.log(`[HOST SLASH COMMAND IGNORED] ${author}: ${messageText}`);
@@ -463,6 +570,20 @@ if (LIVE_ID) {
                 takeover: hasReadKeyword ? 'HEARTS' : null
             });
             return;
+        }
+
+        // --- LIVE VOTING FOR VS BATTLE (A vs B) ---
+        if (activeBattle && !activeBattle.voters.has(author)) {
+            const voteChoice = detectVoteChoice(messageText);
+            if (voteChoice === 'A') {
+                activeBattle.userA.votes++;
+                activeBattle.voters.add(author);
+                io.emit('update-vs-votes', { userA: activeBattle.userA, userB: activeBattle.userB });
+            } else if (voteChoice === 'B') {
+                activeBattle.userB.votes++;
+                activeBattle.voters.add(author);
+                io.emit('update-vs-votes', { userA: activeBattle.userA, userB: activeBattle.userB });
+            }
         }
 
         // Track last viewer for personalized idle welcome & thank you!

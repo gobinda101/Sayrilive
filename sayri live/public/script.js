@@ -296,6 +296,119 @@ socket.on('toggle-viewer-list', (data) => {
     `;
 });
 
+// --- VS BATTLE & LIVE VOTING OVERLAY ---
+socket.on('start-vs-battle', (data) => {
+    let existingVs = document.getElementById('vs-battle-modal-overlay');
+    if (!existingVs) {
+        existingVs = document.createElement('div');
+        existingVs.id = 'vs-battle-modal-overlay';
+        existingVs.className = 'vs-battle-modal-overlay';
+        document.body.appendChild(existingVs);
+    }
+
+    renderVsBattleUI(existingVs, data.userA, data.userB);
+    launchTakeoverAnimation('FIREWORKS');
+});
+
+socket.on('update-vs-votes', (data) => {
+    let existingVs = document.getElementById('vs-battle-modal-overlay');
+    if (existingVs) {
+        renderVsBattleUI(existingVs, data.userA, data.userB);
+    }
+});
+
+socket.on('end-vs-battle', (data) => {
+    let existingVs = document.getElementById('vs-battle-modal-overlay');
+    if (existingVs) {
+        existingVs.classList.add('fade-out');
+        setTimeout(() => existingVs.remove(), 500);
+    }
+
+    // Show VS Battle Winner Celebration
+    if (data.winner) {
+        let avatarUrl = data.winner.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+        if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'pop-winner-overlay';
+        overlay.innerHTML = `
+            <div class="pop-winner-card">
+                <div class="pop-winner-avatar-wrapper">
+                    <span class="pop-winner-crown">🏆</span>
+                    <img src="${avatarUrl}" class="pop-winner-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+                </div>
+                <h2>🏆 VS BATTLE WINNER 🏆</h2>
+                <h3>${data.winner.name} Ji</h3>
+                <p>Jeeta ${data.winner.votes || 0} Votes Se! 🎉</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        launchTakeoverAnimation('FIREWORKS');
+        launchTakeoverAnimation('HEARTS');
+
+        setTimeout(() => {
+            overlay.classList.add('fade-out');
+            setTimeout(() => overlay.remove(), 500);
+        }, 6000);
+    }
+});
+
+function renderVsBattleUI(container, userA, userB) {
+    const totalVotes = (userA.votes + userB.votes) || 1;
+    const percentA = Math.round((userA.votes / totalVotes) * 100);
+    const percentB = 100 - percentA;
+
+    let avatarA = userA.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    let avatarB = userB.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarA.startsWith('//')) avatarA = 'https:' + avatarA;
+    if (avatarB.startsWith('//')) avatarB = 'https:' + avatarB;
+
+    container.innerHTML = `
+        <div class="vs-battle-modal-card">
+            <h2 class="vs-header">⚔️ SHAYARI MAHASANGRAM ⚔️</h2>
+            <div class="vs-fighters-wrapper">
+                <!-- Fighter A -->
+                <div class="vs-fighter-card vs-left">
+                    <div class="vs-avatar-wrapper">
+                        <span class="vs-option-tag">A</span>
+                        <img src="${avatarA}" class="vs-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+                    </div>
+                    <h3>${userA.name}</h3>
+                    <div class="vs-vote-badge">${userA.votes} VOTES</div>
+                    <span class="vs-instruction">Comment 'A' to vote</span>
+                </div>
+
+                <!-- Center VS Flame -->
+                <div class="vs-center-badge">
+                    <span>VS</span>
+                </div>
+
+                <!-- Fighter B -->
+                <div class="vs-fighter-card vs-right">
+                    <div class="vs-avatar-wrapper">
+                        <span class="vs-option-tag tag-b">B</span>
+                        <img src="${avatarB}" class="vs-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+                    </div>
+                    <h3>${userB.name}</h3>
+                    <div class="vs-vote-badge badge-b">${userB.votes} VOTES</div>
+                    <span class="vs-instruction">Comment 'B' to vote</span>
+                </div>
+            </div>
+
+            <!-- Live Progress Bar -->
+            <div class="vs-progress-container">
+                <div class="vs-progress-bar-fill fill-a" style="width: ${percentA}%;"></div>
+                <div class="vs-progress-bar-fill fill-b" style="width: ${percentB}%;"></div>
+            </div>
+            <div class="vs-percent-labels">
+                <span>Option A: ${percentA}%</span>
+                <span>Option B: ${percentB}%</span>
+            </div>
+        </div>
+    `;
+}
+
 const commentQueue = [];
 let isProcessing = false;
 let currentAudioElement = null;
