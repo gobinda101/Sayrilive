@@ -238,6 +238,64 @@ socket.on('viewer-praise', (data) => {
     }, 6000);
 });
 
+// --- DYNAMIC LIVE VIEWERS DIRECTORY LIST OVERLAY ---
+socket.on('toggle-viewer-list', (data) => {
+    let existingModal = document.getElementById('viewer-list-modal-overlay');
+
+    if (!data.show) {
+        if (existingModal) {
+            existingModal.classList.add('fade-out');
+            setTimeout(() => existingModal.remove(), 500);
+        }
+        return;
+    }
+
+    if (!existingModal) {
+        existingModal = document.createElement('div');
+        existingModal.id = 'viewer-list-modal-overlay';
+        existingModal.className = 'viewer-list-modal-overlay';
+        document.body.appendChild(existingModal);
+    }
+
+    const viewersHtml = (data.viewers && data.viewers.length > 0)
+        ? data.viewers.map(v => {
+            let badgeEmoji = '';
+            if (v.vipLevel === 'HOST') badgeEmoji = '💖';
+            else if (v.vipLevel === 'DIAMOND') badgeEmoji = '💎';
+            else if (v.vipLevel === 'GOLD') badgeEmoji = '👑';
+            else if (v.vipLevel === 'BRONZE') badgeEmoji = '🥉';
+
+            let avatarUrl = v.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+            if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+            return `
+                <div class="viewer-list-card">
+                    <img src="${avatarUrl}" class="viewer-list-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+                    <div class="viewer-list-info">
+                        <span class="viewer-list-name">${v.name} ${badgeEmoji}</span>
+                        <span class="viewer-list-count">${v.totalCount} Comments</span>
+                    </div>
+                </div>
+            `;
+        }).join('')
+        : '<p style="color:#fff; text-align:center; width:100%;">Abhi tak kisi viewer ne comment nahi kiya hai.</p>';
+
+    existingModal.innerHTML = `
+        <div class="viewer-list-modal-card">
+            <div class="viewer-list-header">
+                <h2>📋 LIVE VIEWERS DIRECTORY 📋</h2>
+                <span class="viewer-list-total">Total Active Viewers: ${data.viewers ? data.viewers.length : 0}</span>
+            </div>
+            <div class="viewer-list-grid">
+                ${viewersHtml}
+            </div>
+            <div class="viewer-list-footer">
+                Type 'close list' in chat to close
+            </div>
+        </div>
+    `;
+});
+
 const commentQueue = [];
 let isProcessing = false;
 let currentAudioElement = null;

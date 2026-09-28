@@ -913,5 +913,109 @@ body {
     animation: fadeOutOverlay 0.8s ease forwards;
 }
 
+/* --- DYNAMIC VIEWERS DIRECTORY LIST OVERLAY --- */
+.viewer-list-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+    animation: fadeInOverlay 0.4s ease forwards;
+}
+
+.viewer-list-modal-card {
+    background: linear-gradient(135deg, #1e272e 0%, #2f3640 100%);
+    border: 4px solid #f1c40f;
+    border-radius: 24px;
+    padding: 25px;
+    width: 550px;
+    max-width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 50px rgba(241, 196, 15, 0.8);
+    animation: scaleUpCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.viewer-list-header {
+    text-align: center;
+    border-bottom: 2px solid rgba(241, 196, 15, 0.3);
+    padding-bottom: 12px;
+    margin-bottom: 15px;
+}
+
+.viewer-list-header h2 {
+    color: #f1c40f;
+    margin: 0 0 5px 0;
+    font-size: 22px;
+    letter-spacing: 1px;
+}
+
+.viewer-list-total {
+    color: #00d2d3;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.viewer-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 5px;
+    max-height: 50vh;
+}
+
+.viewer-list-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.viewer-list-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 2px solid #f1c40f;
+    object-fit: cover;
+}
+
+.viewer-list-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.viewer-list-name {
+    color: #fff;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.viewer-list-count {
+    color: #f39c12;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.viewer-list-footer {
+    text-align: center;
+    margin-top: 15px;
+    color: #aaa;
+    font-size: 11px;
+    font-style: italic;
+}
+
+.viewer-list-modal-overlay.fade-out {
+    animation: fadeOutOverlay 0.5s ease forwards;
+}
+
+
 
 

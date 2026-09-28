@@ -78,6 +78,21 @@ function findMatchingViewer(messageText) {
 }
 
 let isPaused = false;
+let isViewerListOpen = false;
+
+function getViewerListData() {
+    const list = [];
+    for (let [username, record] of userCommentTracker.entries()) {
+        list.push({
+            name: username,
+            avatar: record.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png',
+            totalCount: record.totalCount || 1,
+            vipLevel: record.vipLevel || 'NONE'
+        });
+    }
+    list.sort((a, b) => b.totalCount - a.totalCount);
+    return list;
+}
 
 function getTopCommenter() {
     let topUser = "Guest Viewer";
@@ -135,6 +150,8 @@ function getIdleText(sayris, idleData) {
     return ctas[Math.floor(Math.random() * ctas.length)];
 }
 
+let lastCommenterObj = null;
+
 // --- SOCKET CONNECTION INITIAL WELCOME CARD ---
 io.on('connection', (socket) => {
     console.log('⚡ New client connected to overlay');
@@ -155,7 +172,16 @@ setInterval(() => {
     if (isPaused) return; // Skip generating idle shayari if paused!
     const now = Date.now();
     if (now - lastChatTime > 12000) {
-        const promptText = getIdleText(sayris, idlePromptsData);
+        let promptText = "";
+
+        // If a viewer recently commented and no one commented after them, give a sweet personal welcome & thanks!
+        if (lastCommenterObj && !lastCommenterObj.welcomed) {
+            lastCommenterObj.welcomed = true;
+            promptText = `Suno na ${lastCommenterObj.name} ji, hamari live stream mein aapka dil se bahut-bahut swagat hai! Aapke pyaare comment ke liye thank you so much! Agar aapko hamari baatein aur shayari pasand aa rahi hain, toh please video ko like aur channel ko subscribe zaroor kar dena na! 💕✨`;
+        } else {
+            promptText = getIdleText(sayris, idlePromptsData);
+        }
+
         let data = {
             name: "Ruchi Gupta 💖",
             avatar: BOT_AVATAR,
@@ -350,6 +376,41 @@ if (LIVE_ID) {
                 return;
             }
 
+            // HOST CONTROL 4: LIST (Show Viewers Directory List)
+            if (upperMsg === 'LIST' || upperMsg === '/LIST' || upperMsg === 'SHOW LIST') {
+                isViewerListOpen = true;
+                const viewers = getViewerListData();
+                io.emit('toggle-viewer-list', { show: true, viewers });
+                io.emit('new-comment', {
+                    name: "Ruchi Gupta 💖",
+                    avatar: BOT_AVATAR,
+                    sayri: "📋 Stream ke sabhi active viewers ki list screen par show kar di gayi hai!",
+                    isVip: true,
+                    vipLevel: 'HOST',
+                    badge: '💖',
+                    isHost: true,
+                    isSystem: true
+                });
+                return;
+            }
+
+            // HOST CONTROL 5: CLOSE LIST (Hide Viewers Directory List)
+            if (upperMsg === 'CLOSE LIST' || upperMsg === '/CLOSE LIST' || upperMsg === 'HIDE LIST' || upperMsg === 'CLOSELIST') {
+                isViewerListOpen = false;
+                io.emit('toggle-viewer-list', { show: false });
+                io.emit('new-comment', {
+                    name: "Ruchi Gupta 💖",
+                    avatar: BOT_AVATAR,
+                    sayri: "❌ Viewers list ko close kar diya gaya hai!",
+                    isVip: true,
+                    vipLevel: 'HOST',
+                    badge: '💖',
+                    isHost: true,
+                    isSystem: true
+                });
+                return;
+            }
+
             // Ignore host slash commands
             if (trimmedMsg.startsWith('/')) {
                 console.log(`[HOST SLASH COMMAND IGNORED] ${author}: ${messageText}`);
@@ -403,23 +464,13 @@ if (LIVE_ID) {
             });
             return;
         }
-                if (!textToDisplay) textToDisplay = messageText;
-            }
 
-            io.emit('new-comment', {
-                name: author,
-                avatar: thumbnail,
-                sayri: textToDisplay,
-                isVip: true,
-                vipLevel: 'HOST',
-                badge: '💖',
-                isHost: true,
-                isSystem: true,
-                noTTS: !hasReadKeyword, // Speak TTS only when "Read" keyword is present
-                takeover: hasReadKeyword ? 'HEARTS' : null
-            });
-            return;
-        }
+        // Track last viewer for personalized idle welcome & thank you!
+        lastCommenterObj = {
+            name: author,
+            avatar: thumbnail,
+            welcomed: false
+        };
 
         // --- FEATURE 7: MULTI-LEVEL VIP TRACKER (BRONZE, GOLD, DIAMOND) ---
         const nowTime = Date.now();
@@ -433,6 +484,11 @@ if (LIVE_ID) {
         userRecord.totalCount = (userRecord.totalCount || 0) + 1;
         userRecord.lastTime = nowTime;
         userRecord.avatar = thumbnail;
+
+        // If List Overlay is open on screen, update it with new comment counts in real time
+        if (isViewerListOpen) {
+            io.emit('toggle-viewer-list', { show: true, viewers: getViewerListData() });
+        }
 
         let isDoubleComment = false;
         let isFrequentComment = false;
