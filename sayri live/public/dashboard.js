@@ -154,3 +154,68 @@ btnStartVs.addEventListener('click', () => {
 btnEndVs.addEventListener('click', () => {
     socket.emit('dashboard-control', { command: 'CLOSE VS' });
 });
+
+// 7. Live Comments Feed Listener
+const commentFeed = document.getElementById('dashboard-comment-feed');
+
+socket.on('new-comment', (data) => {
+    if (!commentFeed) return;
+    const placeholder = commentFeed.querySelector('.feed-placeholder');
+    if (placeholder) placeholder.remove();
+
+    let avatarUrl = data.avatar || 'https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png';
+    if (avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+
+    const item = document.createElement('div');
+    item.className = 'dashboard-comment-item';
+    item.innerHTML = `
+        <img src="${avatarUrl}" class="dashboard-comment-avatar" onerror="this.src='https://fonts.gstatic.com/s/i/productlogos/avatar_anonymous/v4/web-512dp.png'">
+        <div class="dashboard-comment-content">
+            <span class="dashboard-comment-author">${data.name || 'Viewer'}</span>
+            <span class="dashboard-comment-text">${data.sayri || data.message || ''}</span>
+        </div>
+    `;
+    commentFeed.appendChild(item);
+    commentFeed.scrollTop = commentFeed.scrollHeight;
+
+    if (commentFeed.children.length > 50) {
+        commentFeed.removeChild(commentFeed.firstChild);
+    }
+});
+
+// 8. Quick Gifts, Soundboard & Overlay Controls
+document.getElementById('btn-gift-rose')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'ROSE' }));
+document.getElementById('btn-gift-choco')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'CHOCOLATE' }));
+document.getElementById('btn-gift-ring')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'RING' }));
+document.getElementById('btn-gift-joke')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'JOKE' }));
+document.getElementById('btn-gift-bday')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'BDAY' }));
+document.getElementById('btn-gift-vip')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'VIP' }));
+
+document.getElementById('btn-sound-clap')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'CLAP' }));
+document.getElementById('btn-sound-laugh')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'HAHA' }));
+document.getElementById('btn-sound-oops')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'OOPS' }));
+
+document.getElementById('btn-clear-chat')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'CLEAR CHAT' }));
+document.getElementById('btn-emergency-stop')?.addEventListener('click', () => socket.emit('dashboard-control', { command: 'STOP' }));
+
+// 9. Stats & Leaderboard updater on Dashboard
+socket.on('update-leaderboard', (data) => {
+    const viewers = data.viewers || [];
+    const activeViewersEl = document.getElementById('stat-viewers');
+    const totalCommentsEl = document.getElementById('stat-comments');
+    const topSupporterEl = document.getElementById('stat-top-supporter');
+
+    if (activeViewersEl) activeViewersEl.innerText = viewers.length;
+
+    let totalComments = 0;
+    viewers.forEach(v => { totalComments += (v.totalCount || 0); });
+    if (totalCommentsEl) totalCommentsEl.innerText = totalComments;
+
+    if (topSupporterEl) {
+        if (viewers.length > 0) {
+            topSupporterEl.innerText = `${viewers[0].name} (${viewers[0].totalCount} comments)`;
+        } else {
+            topSupporterEl.innerText = 'None Yet ✨';
+        }
+    }
+});

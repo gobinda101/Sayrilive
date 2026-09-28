@@ -31,6 +31,18 @@ const BOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/2583/2583344.png";
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+app.get('/control', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+app.get('/control-panel', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
 app.get('/tts', (req, res) => {
     let text = req.query.text || '';
     if (text.length > 165) {
@@ -278,6 +290,136 @@ io.on('connection', (socket) => {
         vipLevel: 'HOST',
         badge: '💖',
         isSystem: true
+    });
+
+    socket.on('dashboard-announcement', (data) => {
+        io.emit('new-comment', {
+            name: "Ruchi Gupta 💖",
+            avatar: BOT_AVATAR,
+            sayri: data.message,
+            rawComment: data.message,
+            isVip: true,
+            vipLevel: 'HOST',
+            badge: '💖',
+            isHost: true,
+            isSystem: true,
+            noTTS: !data.readTTS
+        });
+    });
+
+    socket.on('dashboard-control', (data) => {
+        const command = (data.command || '').trim();
+        const upperMsg = command.toUpperCase();
+
+        if (upperMsg === 'STOP') {
+            isPaused = true;
+            io.emit('toggle-speech', { paused: true });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "⏸️ Audio TTS paused by host.", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true });
+        }
+        else if (upperMsg === 'START') {
+            isPaused = false;
+            io.emit('toggle-speech', { paused: false });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "▶️ Audio TTS resumed by host.", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true });
+        }
+        else if (upperMsg === 'WINNER') {
+            const top = getTopCommenter();
+            io.emit('pop-winner', { name: top.name, avatar: top.avatar, totalCount: top.count });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: `🏆 Aaj ke Top Commenter Winner hain ${top.name} Ji ${top.count} comments ke sath! Mubarak ho! 🎉`, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'FIREWORKS' });
+        }
+        else if (upperMsg === 'LIST') {
+            isViewerListOpen = true;
+            const viewers = getViewerListData();
+            io.emit('toggle-viewer-list', { show: true, viewers });
+            let announcement = "📋 Abhi tak kisi viewer ne comment nahi kiya hai.";
+            if (viewers.length >= 3) announcement = `📋 Aaj ke Top 3 Supporters hain: Pehle sthan par ${viewers[0].name} ji ${viewers[0].totalCount} comments ke sath, doosre sthan par ${viewers[1].name} ji, aur teesre sthan par ${viewers[2].name} ji! 🎉`;
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: announcement, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true });
+        }
+        else if (upperMsg === 'CLOSE LIST') {
+            isViewerListOpen = false;
+            io.emit('toggle-viewer-list', { show: false });
+        }
+        else if (upperMsg === 'CLEAR CHAT' || upperMsg === 'CLEARCHAT') {
+            io.emit('clear-chat');
+        }
+        else if (upperMsg.includes('CHAT MODE')) {
+            isChatMode = true;
+            io.emit('chat-mode-update', { isChatMode: true });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "💬 CHAT MODE ON! Ab sabhi viewers ke live comments sidhe screen par show honge aur padhe jayenge!", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg.includes('SAYRI MODE')) {
+            isChatMode = false;
+            io.emit('chat-mode-update', { isChatMode: false });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "📜 SAYRI MODE ON! Ab sabhi comments par pyaar bhari shayaris aur quotes chalenge!", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg.startsWith('PRAISE ')) {
+            const nameToPraise = command.replace('PRAISE', '').trim();
+            const matchedViewer = findMatchingViewer(nameToPraise) || { username: nameToPraise, avatar: BOT_AVATAR };
+            const randomPraise = TAAREEF_LINES[Math.floor(Math.random() * TAAREEF_LINES.length)];
+            io.emit('viewer-praise', { name: matchedViewer.username, avatar: matchedViewer.avatar, praiseText: randomPraise });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: `💖 ${matchedViewer.username} Ji ke liye taareef... ${randomPraise}`, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg === 'CLOSE VS' || upperMsg === 'CLOSEVS' || upperMsg === 'END VS') {
+            if (activeBattle) {
+                let winner = activeBattle.userA.votes >= activeBattle.userB.votes ? activeBattle.userA : activeBattle.userB;
+                if (activeBattle.userA.votes === activeBattle.userB.votes) {
+                    winner = { name: "Both (Tie)", votes: activeBattle.userA.votes, avatar: activeBattle.userA.avatar };
+                }
+                io.emit('end-vs-battle', { winner, userA: activeBattle.userA, userB: activeBattle.userB });
+                io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: `🏆 WAH! VS Battle samapt ho gaya hai! Winner hain ${winner.name} Ji ${winner.votes} votes ke sath! Mubarakbaad! 🎉`, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'FIREWORKS' });
+                activeBattle = null;
+            }
+        }
+        else if (upperMsg === 'ROSE' || upperMsg === 'GULAB') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Pyaar bhara gulaab bheja hai... aapka ye gulaab meri duniya mein khushboo bhar gaya! 🌹", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg === 'CHOCOLATE') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Itni meethi chocolate bheji hai, jaise zindagi mein mithas ghul gayi ho! 🍫", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg === 'RING' || upperMsg === 'ANGOOTHI') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Itni pyaari angoothi... mera dil toh aapne pehle hi chura liya tha! 💕", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg === 'JOKE') {
+            const jokesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'jokes.json'), 'utf8'));
+            const joke = jokesData[Math.floor(Math.random() * jokesData.length)];
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: joke, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'laugh' });
+        }
+        else if (upperMsg === 'BDAY' || upperMsg === 'BIRTHDAY') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Arey wah! Aaj kisi ka khaas din hai... dher saari birthday wishes! Khuda aapko hamesha khush rakhe! 🎂✨", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'FIREWORKS' });
+        }
+        else if (upperMsg === 'VIP') {
+            io.emit('big-vip', { name: "Host", avatar: BOT_AVATAR });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "VIP Entry! You are an Early Bird! 🌟", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true });
+        }
+        else if (upperMsg === 'CLAP') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Zordar taaliyan! 👏", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'clap' });
+        }
+        else if (upperMsg === 'HAHA') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Hahaha! 😄", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'laugh' });
+        }
+        else if (upperMsg === 'OOPS') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Oops! Ye kya ho gaya! 😲", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'oops' });
+        }
+        else if (upperMsg.includes(' VS ')) {
+            const parts = command.split(/ VS /i);
+            const nameA = parts[0].trim();
+            const nameB = parts[1].trim();
+            const userA = findMatchingViewer(nameA) || { username: nameA, avatar: BOT_AVATAR };
+            const userB = findMatchingViewer(nameB) || { username: nameB, avatar: BOT_AVATAR };
+
+            activeBattle = {
+                userA: { name: userA.username, avatar: userA.avatar, votes: 0 },
+                userB: { name: userB.username, avatar: userB.avatar, votes: 0 },
+                voters: new Set()
+            };
+            io.emit('start-vs-battle', { userA: activeBattle.userA, userB: activeBattle.userB });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: `⚔️ MAHASANGRAM! ${userA.username} VS ${userB.username}! 'A' ya 'B' comment karke vote karein! ⚔️`, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'FIREWORKS' });
+        }
+        else {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: command, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true });
+        }
+    });
+            noTTS: !data.readTTS
+        });
     });
 });
 
@@ -580,6 +722,7 @@ if (LIVE_ID) {
             // HOST CONTROL 7: CHAT MODE (Show & Read all viewers' actual comment messages)
             if (upperMsg.includes('CHAT MODE') || upperMsg.includes('/CHAT MODE') || upperMsg === 'CHATMODE') {
                 isChatMode = true;
+                io.emit('chat-mode-update', { isChatMode: true });
                 io.emit('new-comment', {
                     name: "Ruchi Gupta 💖",
                     avatar: BOT_AVATAR,
@@ -597,6 +740,7 @@ if (LIVE_ID) {
             // HOST CONTROL 8: SAYRI MODE (Switch back to Shayari Live Mode)
             if (upperMsg.includes('SAYRI MODE') || upperMsg.includes('/SAYRI MODE') || upperMsg === 'SAYRIMODE' || upperMsg.includes('SHAYARI MODE')) {
                 isChatMode = false;
+                io.emit('chat-mode-update', { isChatMode: false });
                 io.emit('new-comment', {
                     name: "Ruchi Gupta 💖",
                     avatar: BOT_AVATAR,
@@ -666,15 +810,13 @@ if (LIVE_ID) {
         }
 
         // --- LIVE VOTING FOR VS BATTLE (A vs B) ---
-        if (activeBattle && !activeBattle.voters.has(author)) {
+        if (activeBattle) {
             const voteChoice = detectVoteChoice(messageText);
             if (voteChoice === 'A') {
                 activeBattle.userA.votes++;
-                activeBattle.voters.add(author);
                 io.emit('update-vs-votes', { userA: activeBattle.userA, userB: activeBattle.userB });
             } else if (voteChoice === 'B') {
                 activeBattle.userB.votes++;
-                activeBattle.voters.add(author);
                 io.emit('update-vs-votes', { userA: activeBattle.userA, userB: activeBattle.userB });
             }
         }
@@ -876,6 +1018,7 @@ if (LIVE_ID) {
             name: author,
             avatar: thumbnail,
             sayri: resultText,
+            rawComment: messageText,
             isVip: isVip || hajiriList.has(author),
             vipLevel: userRecord.vipLevel,
             isChatMode: isChatMode,

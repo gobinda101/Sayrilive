@@ -39,6 +39,10 @@ app.get('/control', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
+app.get('/control-panel', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
 app.get('/tts', (req, res) => {
     let text = req.query.text || '';
     // Strip @ symbol and 'at the rate' so Google TTS never speaks '@' aloud
@@ -317,6 +321,9 @@ io.on('connection', (socket) => {
             isViewerListOpen = false;
             io.emit('toggle-viewer-list', { show: false });
         }
+        else if (upperMsg === 'CLEAR CHAT' || upperMsg === 'CLEARCHAT') {
+            io.emit('clear-chat');
+        }
         else if (upperMsg.includes('CHAT MODE')) {
             isChatMode = true;
             io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "💬 CHAT MODE ON! Ab sabhi viewers ke live comments sidhe screen par show honge!", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true });
@@ -338,6 +345,36 @@ io.on('connection', (socket) => {
                 io.emit('end-vs-battle', { winner, userA: activeBattle.userA, userB: activeBattle.userB });
                 activeBattle = null;
             }
+        }
+        else if (upperMsg === 'ROSE' || upperMsg === 'GULAB') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Pyaar bhara gulaab bheja hai... aapka ye gulaab meri duniya mein khushboo bhar gaya! 🌹", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg === 'CHOCOLATE') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Itni meethi chocolate bheji hai, jaise zindagi mein mithas ghul gayi ho! 🍫", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg === 'RING' || upperMsg === 'ANGOOTHI') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Itni pyaari angoothi... mera dil toh aapne pehle hi chura liya tha! 💕", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'HEARTS' });
+        }
+        else if (upperMsg === 'JOKE') {
+            const jokesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'jokes.json'), 'utf8'));
+            const joke = jokesData[Math.floor(Math.random() * jokesData.length)];
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: joke, isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'laugh' });
+        }
+        else if (upperMsg === 'BDAY' || upperMsg === 'BIRTHDAY') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Arey wah! Aaj kisi ka khaas din hai... dher saari birthday wishes! Khuda aapko hamesha khush rakhe! 🎂✨", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, takeover: 'FIREWORKS' });
+        }
+        else if (upperMsg === 'VIP') {
+            io.emit('big-vip', { name: "Host", avatar: BOT_AVATAR });
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "VIP Entry! You are an Early Bird! 🌟", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true });
+        }
+        else if (upperMsg === 'CLAP') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Zordar taaliyan! 👏", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'clap' });
+        }
+        else if (upperMsg === 'HAHA') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Hahaha! 😄", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'laugh' });
+        }
+        else if (upperMsg === 'OOPS') {
+            io.emit('new-comment', { name: "Ruchi Gupta 💖", avatar: BOT_AVATAR, sayri: "Oops! Ye kya ho gaya! 😲", isVip: true, vipLevel: 'HOST', badge: '💖', isHost: true, isSystem: true, soundEffect: 'oops' });
         }
         else if (upperMsg.includes('VS')) {
             const vsMatched = extractVsNames(command);
@@ -663,6 +700,7 @@ if (LIVE_ID) {
             // HOST CONTROL 7: CHAT MODE (Show & Read all viewers' actual comment messages)
             if (upperMsg.includes('CHAT MODE') || upperMsg.includes('/CHAT MODE') || upperMsg === 'CHATMODE') {
                 isChatMode = true;
+                io.emit('chat-mode-update', { isChatMode: true });
                 io.emit('new-comment', {
                     name: "Ruchi Gupta 💖",
                     avatar: BOT_AVATAR,
@@ -680,6 +718,7 @@ if (LIVE_ID) {
             // HOST CONTROL 8: SAYRI MODE (Switch back to Shayari Live Mode)
             if (upperMsg.includes('SAYRI MODE') || upperMsg.includes('/SAYRI MODE') || upperMsg === 'SAYRIMODE' || upperMsg.includes('SHAYARI MODE')) {
                 isChatMode = false;
+                io.emit('chat-mode-update', { isChatMode: false });
                 io.emit('new-comment', {
                     name: "Ruchi Gupta 💖",
                     avatar: BOT_AVATAR,
@@ -749,15 +788,13 @@ if (LIVE_ID) {
         }
 
         // --- LIVE VOTING FOR VS BATTLE (A vs B) ---
-        if (activeBattle && !activeBattle.voters.has(author)) {
+        if (activeBattle) {
             const voteChoice = detectVoteChoice(messageText);
             if (voteChoice === 'A') {
                 activeBattle.userA.votes++;
-                activeBattle.voters.add(author);
                 io.emit('update-vs-votes', { userA: activeBattle.userA, userB: activeBattle.userB });
             } else if (voteChoice === 'B') {
                 activeBattle.userB.votes++;
-                activeBattle.voters.add(author);
                 io.emit('update-vs-votes', { userA: activeBattle.userA, userB: activeBattle.userB });
             }
         }
@@ -955,6 +992,7 @@ if (LIVE_ID) {
             name: author,
             avatar: thumbnail,
             sayri: resultText,
+            rawComment: messageText,
             isVip: isVip || hajiriList.has(author),
             vipLevel: userRecord.vipLevel,
             isChatMode: isChatMode,

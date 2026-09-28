@@ -202,6 +202,13 @@ socket.on('pop-winner', (data) => {
     launchTakeoverAnimation('FIREWORKS');
     launchTakeoverAnimation('HEARTS');
 
+    // Play TTS speech for winner
+    stopCurrentAudio();
+    const cleanWinnerName = cleanTextForTTS(data.name);
+    const winnerTtsText = `Wah! Aaj ke top commenter winner hain ${cleanWinnerName} Ji! Sabse zyada ${data.totalCount || 0} comments kiye hain inhone. Bahut-bahut mubarakbaad!`;
+    const winnerTtsUrl = `/tts?text=${encodeURIComponent(winnerTtsText)}`;
+    playAudioSecurely(winnerTtsUrl, 35000);
+
     // Auto remove overlay after EXACTLY 3 SECONDS
     setTimeout(() => {
         overlay.classList.add('fade-out');
@@ -232,10 +239,25 @@ socket.on('viewer-praise', (data) => {
     launchTakeoverAnimation('HEARTS');
     launchTakeoverAnimation('FIREWORKS');
 
+    // Play TTS speech for praise
+    stopCurrentAudio();
+    const cleanName = cleanTextForTTS(data.name);
+    const cleanPraise = cleanTextForTTS(data.praiseText || 'Aap humare live stream ke sabse pyaare viewer hain!');
+    const praiseTtsText = `Suno na ${cleanName} ji! ${cleanPraise}`;
+    const praiseTtsUrl = `/tts?text=${encodeURIComponent(praiseTtsText)}`;
+    playAudioSecurely(praiseTtsUrl, 35000);
+
     setTimeout(() => {
         overlay.classList.add('fade-out');
         setTimeout(() => overlay.remove(), 800);
     }, 6000);
+});
+
+// --- CHAT MODE UPDATE LISTENER ---
+socket.on('chat-mode-update', (data) => {
+    commentQueue.length = 0;
+    stopCurrentAudio();
+    isProcessing = false;
 });
 
 // --- TOP 3 ROMANTIC SUPPORTERS LEADERBOARD ---
@@ -464,6 +486,17 @@ const commentQueue = [];
 let isProcessing = false;
 let currentAudioElement = null;
 
+function cleanTextForTTS(text) {
+    if (!text) return "";
+    return text
+        .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '')
+        .replace(/[*_#`~\[\]()!]/g, '')
+        .replace(/@/g, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function stopCurrentAudio() {
     if (currentAudioElement) {
         try {
@@ -571,9 +604,10 @@ async function processIncomingData(data) {
         if (!data.noTTS) {
             stopCurrentAudio();
             card.classList.add('speaking');
-            const ttsText = data.sayri.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '').trim();
+            const cleanMsg = cleanTextForTTS(data.sayri);
+            const ttsText = data.isSystem ? cleanMsg : ("Ruchi Gupta ji keh rahi hain: " + cleanMsg);
             const url = `/tts?text=${encodeURIComponent(ttsText)}`;
-            playAudioSecurely(url, 15000).then(() => card.classList.remove('speaking'));
+            playAudioSecurely(url, 35000).then(() => card.classList.remove('speaking'));
         }
         return;
     }
@@ -595,11 +629,8 @@ async function processQueue() {
 
     if (!data.noTTS) {
         card.classList.add('speaking');
-        let cleanName = data.name.replace(/@/g, '').trim();
-        if (cleanName.includes('-')) {
-            cleanName = cleanName.split('-')[0].trim();
-        }
-        cleanName = cleanName.replace(/[0-9]/g, '').trim();
+        let cleanName = cleanTextForTTS(data.name.replace(/-/g, ' ').replace(/[0-9]/g, ''));
+        if (cleanName.includes(' ')) cleanName = cleanName.split(' ')[0];
 
         let prefix = "";
         if (data.isChatMode) {
@@ -608,11 +639,11 @@ async function processQueue() {
             prefix = data.isSystem ? '' : (cleanName + " ke liye... ");
         }
 
-        const rawText = prefix + data.sayri;
-        const ttsText = rawText.replace(/@/g, '').replace(/_/g, ' ').replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDDFF]|[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2300}-\u{23FF}])/gu, '').trim();
-        const url = `/tts?text=${encodeURIComponent(ttsText)}`;
+        const cleanSayri = cleanTextForTTS(data.sayri);
+        const rawText = prefix + cleanSayri;
+        const url = `/tts?text=${encodeURIComponent(rawText)}`;
 
-        await playAudioSecurely(url, 15000);
+        await playAudioSecurely(url, 35000);
         card.classList.remove('speaking');
     }
 
